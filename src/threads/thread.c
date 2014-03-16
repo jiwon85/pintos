@@ -70,6 +70,7 @@ static void *alloc_frame (struct thread *, size_t size);
 static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
+struct list* get_list();
 
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
@@ -582,7 +583,15 @@ allocate_tid (void)
 
   return tid;
 }
+
+
+struct list* get_list(){
+  return &ready_list;
+}
+
 
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
+
+
