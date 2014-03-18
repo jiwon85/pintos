@@ -71,6 +71,7 @@ static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 struct list* get_list();
+bool comparative(const struct list_elem *a, const struct list_elem *b, void *aux);
 
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
@@ -248,6 +249,9 @@ thread_unblock (struct thread *t)
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
   list_push_back (&ready_list, &t->elem);
+  //CHANGED HERE **
+  list_sort(&ready_list, comparative, 0);
+  list_reverse(&ready_list);
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
@@ -317,8 +321,12 @@ thread_yield (void)
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
-  if (cur != idle_thread) 
+  if (cur != idle_thread){ 
     list_push_back (&ready_list, &cur->elem);
+    //CHANGED HERE **
+    list_sort(&ready_list, comparative, 0);
+    list_reverse(&ready_list);
+  }
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -346,6 +354,7 @@ void
 thread_set_priority (int new_priority) 
 {
   thread_current ()->priority = new_priority;
+  //do something here to interrupt if new_priority isn't the highest on the list.
 }
 
 /* Returns the current thread's priority. */
@@ -545,6 +554,12 @@ thread_schedule_tail (struct thread *prev)
       ASSERT (prev != cur);
       palloc_free_page (prev);
     }
+}
+
+bool comparative(const struct list_elem *a, const struct list_elem *b, void *aux){
+  struct thread *aThread = list_entry(a, struct thread, elem);
+  struct thread *bThread = list_entry(b, struct thread, elem);
+  return aThread->priority < bThread->priority;
 }
 
 /* Schedules a new process.  At entry, interrupts must be off and

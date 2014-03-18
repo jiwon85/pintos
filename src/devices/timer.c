@@ -103,12 +103,14 @@ timer_sleep (int64_t ticks)
   thread_block();
   intr_set_level(old);
   */
-
+  ASSERT (intr_get_level () == INTR_ON);
    //TEST
   if(ticks > 0){
-    thread_current()->currentticks = ticks;
-    ASSERT (intr_get_level () == INTR_ON);
+    
     enum intr_level old = intr_disable();
+
+    thread_current()->currentticks = ticks;
+
     thread_block();
     intr_set_level(old);
   }
