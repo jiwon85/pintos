@@ -141,5 +141,6 @@ void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 struct list* get_list();
+static void schedule_with_priority(struct thread *add); 
 
 #endif /* threads/thread.h */
