@@ -248,10 +248,11 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_list, &t->elem);
+  //list_push_back (&ready_list, &t->elem);
   //CHANGED HERE **
-  list_sort(&ready_list, comparative, 0);
-  list_reverse(&ready_list);
+  list_insert_ordered (&ready_list, &t->elem, comparative, 0);
+  //list_sort(&ready_list, comparative, 0);
+  //list_reverse(&ready_list);
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
@@ -322,10 +323,11 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread){ 
-    list_push_back (&ready_list, &cur->elem);
-    //CHANGED HERE **
-    list_sort(&ready_list, comparative, 0);
-    list_reverse(&ready_list);
+    //list_push_back (&ready_list, &t->elem);
+  //CHANGED HERE **
+    list_insert_ordered (&ready_list, &cur->elem, comparative, 0);
+  //list_sort(&ready_list, comparative, 0);
+  //list_reverse(&ready_list);
   }
   cur->status = THREAD_READY;
   schedule ();
@@ -507,8 +509,8 @@ next_thread_to_run (void)
   if (list_empty (&ready_list))
     return idle_thread;
   else
-    return list_entry (list_pop_front (&ready_list), struct thread, elem);
-}
+    return list_entry (list_pop_back (&ready_list), struct thread, elem);
+}  
 
 /* Completes a thread switch by activating the new thread's page
    tables, and, if the previous thread is dying, destroying it.
