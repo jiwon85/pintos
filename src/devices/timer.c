@@ -94,13 +94,24 @@ timer_sleep (int64_t ticks)
 {
   //int64_t start = timer_ticks ();
 
-  thread_current()->currentticks = ticks;
+  //jiwon's old code
+  /*thread_current()->currentticks = ticks;
   ASSERT (intr_get_level () == INTR_ON);
   enum intr_level old = intr_disable();
   
   list_remove(&thread_current()->elem);
   thread_block();
   intr_set_level(old);
+  */
+
+   //TEST
+  if(ticks > 0){
+    thread_current()->currentticks = ticks;
+    ASSERT (intr_get_level () == INTR_ON);
+    enum intr_level old = intr_disable();
+    thread_block();
+    intr_set_level(old);
+  }
   
   //disable interrupts while blocking thread
 
