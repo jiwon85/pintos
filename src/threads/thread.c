@@ -73,6 +73,10 @@ static tid_t allocate_tid (void);
 struct list* get_list();
 bool comparative(const struct list_elem *a, const struct list_elem *b, void *aux);
 
+static struct lock list_lock;
+static struct condition notFull;
+static struct condition notEmpty;
+
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S
@@ -91,15 +95,23 @@ thread_init (void)
 {
   ASSERT (intr_get_level () == INTR_OFF);
 
+  lock_init(&list_lock);
+
   lock_init (&tid_lock);
+
   list_init (&ready_list);
   list_init (&all_list);
+
+  cond_init(&notFull);
+  cond_init(&notEmpty);
+
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
+  //sema_init(&sema, 0);  
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -124,7 +136,9 @@ thread_start (void)
 void
 thread_tick (void) 
 {
+  printf("before thread current in tick\n");
   struct thread *t = thread_current ();
+  printf("came back from thread current in tick\n");
 
   /* Update statistics. */
   if (t == idle_thread)
@@ -226,8 +240,9 @@ thread_block (void)
 {
   ASSERT (!intr_context ());
   ASSERT (intr_get_level () == INTR_OFF);
-
+  printf("going to current in blocked\n");
   thread_current ()->status = THREAD_BLOCKED;
+  printf("came back from current in blocked\n");
   schedule ();
 }
 
@@ -250,21 +265,29 @@ thread_unblock (struct thread *t)
   ASSERT (t->status == THREAD_BLOCKED);
   //list_push_back (&ready_list, &t->elem);
   //CHANGED HERE **
-  int oldPri = thread_get_priority();
+  //int oldPri = thread_get_priority();
+  lock_acquire(&list_lock);
+  do{
+    cond_wait(&notFull, &list_lock);
+  }while(0);
   list_insert_ordered (&ready_list, &t->elem, comparative, 0);
+  cond_signal(&notEmpty, &list_lock);
+  lock_release(&list_lock);
   //list_sort(&ready_list, comparative, 0);
   //list_reverse(&ready_list);
   t->status = THREAD_READY;
+  // if(t->priority > oldPri){
+  //   thread_yield();
+  // }
   intr_set_level (old_level);
-  if(t->priority > oldPri){
-	thread_yield();
-  }
+  
 }
 
 /* Returns the name of the running thread. */
 const char *
 thread_name (void) 
 {
+  printf("i'm in thread_name!\n");
   return thread_current ()->name;
 }
 
@@ -291,6 +314,7 @@ thread_current (void)
 tid_t
 thread_tid (void) 
 {
+  printf("i'm in thread_tid!\n");
   return thread_current ()->tid;
 }
 
@@ -321,8 +345,10 @@ void
 thread_yield (void) 
 {
  
+  printf("going to current in yield\n");
 
   struct thread *cur = thread_current ();
+  printf("came back from current in yield\n");
   enum intr_level old_level;
   
   ASSERT (!intr_context ());
@@ -331,7 +357,14 @@ thread_yield (void)
   if (cur != idle_thread){ 
     //list_push_back (&ready_list, &t->elem);
   //CHANGED HERE **
-    list_insert_ordered (&ready_list, &cur->elem, comparative, 0);
+  
+  lock_acquire(&list_lock);
+  do{
+    cond_wait(&notFull, &list_lock);
+  }while(0);
+  list_insert_ordered (&ready_list, &cur->elem, comparative, 0);
+  cond_signal(&notEmpty, &list_lock);
+  lock_release(&list_lock);
   //list_sort(&ready_list, comparative, 0);
   //list_reverse(&ready_list);
   }
@@ -361,15 +394,20 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
+  printf("going to current in setpri\n");
   thread_current ()->priority = new_priority;
   //do something here to interrupt if new_priority isn't the highest on the list.
+  printf("coming from current in setpri\n");
 }
 
 /* Returns the current thread's priority. */
 int
 thread_get_priority (void) 
 {
+  printf("i'm in get pri\n");
+
   return thread_current ()->priority;
+
 }
 
 /* Sets the current thread's nice value to NICE. */
@@ -416,7 +454,10 @@ static void
 idle (void *idle_started_ UNUSED) 
 {
   struct semaphore *idle_started = idle_started_;
+
   idle_thread = thread_current ();
+
+  
   sema_up (idle_started);
 
   for (;;) 
@@ -514,9 +555,16 @@ next_thread_to_run (void)
 {
   if (list_empty (&ready_list))
     return idle_thread;
-
   else{
-    return list_entry (list_pop_back(&ready_list), struct thread, elem);
+    struct thread * popped; 
+    lock_acquire(&list_lock);
+    while(list_empty(&ready_list)){
+      cond_wait(&notEmpty, &list_lock);
+    }
+    popped = list_entry (list_pop_back(&ready_list), struct thread, elem);
+    cond_broadcast(&notFull, &list_lock);
+    lock_release(&list_lock);
+    return popped;
   }
 }  
 
@@ -610,9 +658,7 @@ allocate_tid (void)
 }
 
 
-struct list* get_list(){
-  return &ready_list;
-}
+
 
 
 /* Offset of `stack' member within `struct thread'.

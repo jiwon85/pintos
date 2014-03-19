@@ -108,8 +108,9 @@ timer_sleep (int64_t ticks)
   if(ticks > 0){
     
     enum intr_level old = intr_disable();
-
+    
     thread_current()->currentticks = ticks;
+
 
     thread_block();
     intr_set_level(old);
@@ -215,7 +216,6 @@ static void thread_rise(struct thread *current){
     if(current->currentticks > 0){
       current->currentticks--;
       if(current->currentticks == 0){
-        //list_push_back(get_list(), &current->elem);
         thread_unblock(current);
       }
     }

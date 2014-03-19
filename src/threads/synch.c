@@ -242,7 +242,7 @@ bool
 lock_held_by_current_thread (const struct lock *lock) 
 {
   ASSERT (lock != NULL);
-
+  //printf("lock_held_by_current_thread\n");
   return lock->holder == thread_current ();
 }
 
