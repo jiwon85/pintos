@@ -136,9 +136,9 @@ thread_start (void)
 void
 thread_tick (void) 
 {
-  printf("before thread current in tick\n");
+  //printf("before thread current in tick\n");
   struct thread *t = thread_current ();
-  printf("came back from thread current in tick\n");
+  //printf("came back from thread current in tick\n");
 
   /* Update statistics. */
   if (t == idle_thread)
@@ -220,23 +220,32 @@ thread_create (const char *name, int priority,
   sf->eip = switch_entry;
   sf->ebp = 0;
 
+
+//mine
+  list_insert_ordered (&ready_list, &t->elem, comparative, 0);
+  t->status = THREAD_READY;
+  //end mine
+
+
+
   intr_set_level (old_level);
 
   /* Add to run queue. */
   
 
-  t->status = THREAD_RUNNING;
+  //t->status = THREAD_RUNNING;
 
-  lock_acquire(&list_lock);
+  // lock_acquire(&list_lock);
 
-  do{
-    cond_wait(&notFull, &list_lock);
-  }while(0);
-  thread_unblock (t);
-  t->status = THREAD_RUNNING;
-  cond_signal(&notEmpty, &list_lock);
-  lock_release(&list_lock);
-  t->status = THREAD_READY;
+  // do{
+  //   cond_wait(&notFull, &list_lock);
+  // }while(0);
+   //thread_unblock (t);
+
+  // t->status = THREAD_RUNNING;
+  // cond_signal(&notEmpty, &list_lock);
+  // lock_release(&list_lock);
+  //t->status = THREAD_READY;
   return tid;
 }
 
@@ -252,10 +261,11 @@ thread_block (void)
 {
   ASSERT (!intr_context ());
   ASSERT (intr_get_level () == INTR_OFF);
-  printf("going to current in blocked: %d\n",thread_current()->status);
+  //printf("going to current in blocked: %d\n",thread_current()->status);
   
-  thread_current ()->status = THREAD_BLOCKED;
-  printf("came back from current in blocked\n");
+  //thread_current ()->status = THREAD_BLOCKED;
+  thread_current()->status = THREAD_BLOCKED; 
+  //printf("came back from current in blocked\n");
   schedule ();
 }
 
@@ -298,7 +308,7 @@ thread_unblock (struct thread *t)
 const char *
 thread_name (void) 
 {
-  printf("i'm in thread_name!\n");
+  //printf("i'm in thread_name!\n");
   return thread_current ()->name;
 }
 
@@ -325,7 +335,7 @@ thread_current (void)
 tid_t
 thread_tid (void) 
 {
-  printf("i'm in thread_tid!\n");
+  //printf("i'm in thread_tid!\n");
   return thread_current ()->tid;
 }
 
@@ -356,10 +366,10 @@ void
 thread_yield (void) 
 {
  
-  printf("going to current in yield\n");
+  //printf("going to current in yield\n");
 
   struct thread *cur = thread_current ();
-  printf("came back from current in yield\n");
+  //printf("came back from current in yield\n");
   enum intr_level old_level;
   
   ASSERT (!intr_context ());
@@ -368,16 +378,16 @@ thread_yield (void)
   if (cur != idle_thread){ 
     //list_push_back (&ready_list, &t->elem);
   //CHANGED HERE **
-  //cur->status = THREAD_RUNNING;
-  lock_acquire(&list_lock);
-  do{
-    cond_wait(&notFull, &list_lock);
-  }while(0);
-  list_insert_ordered (&ready_list, &cur->elem, comparative, 0);
-  cond_signal(&notEmpty, &list_lock);
-  lock_release(&list_lock);
-  //list_sort(&ready_list, comparative, 0);
-  //list_reverse(&ready_list);
+  // cur->status = THREAD_RUNNING;
+   lock_acquire(&list_lock);
+   //do{
+     cond_wait(&notFull, &list_lock);
+   //}while(0);
+   list_insert_ordered (&ready_list, &cur->elem, comparative, 0);
+   cond_signal(&notEmpty, &list_lock);
+   lock_release(&list_lock);
+  list_sort(&ready_list, comparative, 0);
+  list_reverse(&ready_list);
   }
   cur->status = THREAD_READY;
   schedule ();
@@ -405,17 +415,17 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  printf("going to current in setpri\n");
+  //printf("going to current in setpri\n");
   thread_current ()->priority = new_priority;
   //do something here to interrupt if new_priority isn't the highest on the list.
-  printf("coming from current in setpri\n");
+  //printf("coming from current in setpri\n");
 }
 
 /* Returns the current thread's priority. */
 int
 thread_get_priority (void) 
 {
-  printf("i'm in get pri\n");
+  //printf("i'm in get pri\n");
 
   return thread_current ()->priority;
 
@@ -568,7 +578,7 @@ next_thread_to_run (void)
     return idle_thread;
   else{
     struct thread * popped; 
-    //struct thread * temp = list_entry (list_max(&ready_list, comparative, 0), struct thread, elem);
+    // struct thread * temp = list_entry (list_max(&ready_list, comparative, 0), struct thread, elem);
     // enum thread_status oldStatus = temp->status;
     // temp->status = THREAD_RUNNING;
     lock_acquire(&list_lock);
@@ -578,7 +588,7 @@ next_thread_to_run (void)
     popped = list_entry (list_pop_back(&ready_list), struct thread, elem);
     cond_broadcast(&notFull, &list_lock);
     lock_release(&list_lock);
-    //temp->status = oldStatus;
+    // temp->status = oldStatus;
     return popped;
   }
 }  

@@ -68,13 +68,11 @@ sema_down (struct semaphore *sema)
   old_level = intr_disable ();
   while (sema->value == 0) 
     {
-      printf("sema_down thread current\n");
+
       list_push_back (&sema->waiters, &thread_current ()->elem);
-      printf("/sema_down thread current: %d\n",thread_current()->status); 
-      
-      printf("sema_down thread block\n"); 
+
       thread_block ();
-      printf("sema_down thread block\n"); 
+
     }
   sema->value--;
   intr_set_level (old_level);
@@ -88,7 +86,7 @@ sema_down (struct semaphore *sema)
 bool
 sema_try_down (struct semaphore *sema) 
 {
-  printf("In sema_try_down\n");
+  
   enum intr_level old_level;
   bool success;
 

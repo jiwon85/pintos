@@ -111,9 +111,9 @@ timer_sleep (int64_t ticks)
     
     thread_current()->currentticks = ticks;
 
-    printf("Calling thread block in timer sleep\n");
+    //printf("Calling thread block in timer sleep\n");
     thread_block();
-    printf("Came back from thread block in timer sleep\n");
+    //printf("Came back from thread block in timer sleep\n");
     intr_set_level(old);
   }
   
@@ -218,20 +218,21 @@ static void thread_rise(struct thread *current){
       current->currentticks--;
       if(current->currentticks == 0){
 
-        struct lock * list_lock= getLock();
-        struct condition * notFull = getNotFull();
-        struct condition * notEmpty = getNotEmpty();
+         struct lock * list_lock= getLock();
+         struct condition * notFull = getNotFull();
+         struct condition * notEmpty = getNotEmpty();
+         current->status = THREAD_RUNNING;
+         lock_acquire(list_lock);
 
-        lock_acquire(list_lock);
-
-       do{
-        cond_wait(notFull, list_lock);
-        }while(0);
-        thread_unblock(current);
-        current->status = THREAD_RUNNING;
-        cond_signal(notEmpty, list_lock);
-        lock_release(list_lock);
-        current->status = THREAD_READY;
+          
+          //do{
+          cond_wait(notFull, list_lock);
+         //}while(0);
+         thread_unblock(current);
+         current->status = THREAD_RUNNING;
+         cond_signal(notEmpty, list_lock);
+         lock_release(list_lock);
+         current->status = THREAD_READY;
         
       }
     }
