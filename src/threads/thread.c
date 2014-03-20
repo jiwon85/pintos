@@ -223,8 +223,20 @@ thread_create (const char *name, int priority,
   intr_set_level (old_level);
 
   /* Add to run queue. */
-  thread_unblock (t);
+  
 
+  t->status = THREAD_RUNNING;
+
+  lock_acquire(&list_lock);
+
+  do{
+    cond_wait(&notFull, &list_lock);
+  }while(0);
+  thread_unblock (t);
+  t->status = THREAD_RUNNING;
+  cond_signal(&notEmpty, &list_lock);
+  lock_release(&list_lock);
+  t->status = THREAD_READY;
   return tid;
 }
 
@@ -240,7 +252,8 @@ thread_block (void)
 {
   ASSERT (!intr_context ());
   ASSERT (intr_get_level () == INTR_OFF);
-  printf("going to current in blocked\n");
+  printf("going to current in blocked: %d\n",thread_current()->status);
+  
   thread_current ()->status = THREAD_BLOCKED;
   printf("came back from current in blocked\n");
   schedule ();
@@ -262,17 +275,15 @@ thread_unblock (struct thread *t)
   ASSERT (is_thread (t));
 
   old_level = intr_disable ();
+
   ASSERT (t->status == THREAD_BLOCKED);
   //list_push_back (&ready_list, &t->elem);
   //CHANGED HERE **
   //int oldPri = thread_get_priority();
-  lock_acquire(&list_lock);
-  do{
-    cond_wait(&notFull, &list_lock);
-  }while(0);
+  //t->status = THREAD_RUNNING;
+  
   list_insert_ordered (&ready_list, &t->elem, comparative, 0);
-  cond_signal(&notEmpty, &list_lock);
-  lock_release(&list_lock);
+  //t->status = THREAD_BLOCKED;
   //list_sort(&ready_list, comparative, 0);
   //list_reverse(&ready_list);
   t->status = THREAD_READY;
@@ -357,7 +368,7 @@ thread_yield (void)
   if (cur != idle_thread){ 
     //list_push_back (&ready_list, &t->elem);
   //CHANGED HERE **
-  
+  //cur->status = THREAD_RUNNING;
   lock_acquire(&list_lock);
   do{
     cond_wait(&notFull, &list_lock);
@@ -557,6 +568,9 @@ next_thread_to_run (void)
     return idle_thread;
   else{
     struct thread * popped; 
+    //struct thread * temp = list_entry (list_max(&ready_list, comparative, 0), struct thread, elem);
+    // enum thread_status oldStatus = temp->status;
+    // temp->status = THREAD_RUNNING;
     lock_acquire(&list_lock);
     while(list_empty(&ready_list)){
       cond_wait(&notEmpty, &list_lock);
@@ -564,6 +578,7 @@ next_thread_to_run (void)
     popped = list_entry (list_pop_back(&ready_list), struct thread, elem);
     cond_broadcast(&notFull, &list_lock);
     lock_release(&list_lock);
+    //temp->status = oldStatus;
     return popped;
   }
 }  
@@ -657,6 +672,17 @@ allocate_tid (void)
   return tid;
 }
 
+struct lock * getLock(){
+  return &list_lock;
+}
+
+struct condition * getNotEmpty(){
+  return &notEmpty;
+}
+
+struct condition * getNotFull(){
+  return &notFull;
+}
 
 
 
