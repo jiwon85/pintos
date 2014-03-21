@@ -106,17 +106,14 @@ timer_sleep (int64_t ticks)
   ASSERT (intr_get_level () == INTR_ON);
    //TEST
   if(ticks > 0){
-    
     enum intr_level old = intr_disable();
-    
     thread_current()->currentticks = ticks;
-
+    printf("tid of current thread is in sleep %d\n", &thread_current()->tid);
     //printf("Calling thread block in timer sleep\n");
     thread_block();
     //printf("Came back from thread block in timer sleep\n");
     intr_set_level(old);
   }
-  
   //disable interrupts while blocking thread
 
   //enum intr_level old = intr_disable();
@@ -126,8 +123,6 @@ timer_sleep (int64_t ticks)
 
   // while (timer_elapsed (start) < ticks) 
   //   thread_yield ();
-
-
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -218,21 +213,21 @@ static void thread_rise(struct thread *current){
       current->currentticks--;
       if(current->currentticks == 0){
 
-         struct lock * list_lock= getLock();
-         struct condition * notFull = getNotFull();
-         struct condition * notEmpty = getNotEmpty();
-         current->status = THREAD_RUNNING;
-         lock_acquire(list_lock);
+         // struct lock * list_lock= getLock();
+         // struct condition * notFull = getNotFull();
+         // struct condition * notEmpty = getNotEmpty();
+         // current->status = THREAD_RUNNING;
+         // lock_acquire(list_lock);
 
           
           //do{
-          cond_wait(notFull, list_lock);
+          // cond_wait(notFull, list_lock);
          //}while(0);
          thread_unblock(current);
-         current->status = THREAD_RUNNING;
-         cond_signal(notEmpty, list_lock);
-         lock_release(list_lock);
-         current->status = THREAD_READY;
+         // current->status = THREAD_RUNNING;
+         // cond_signal(notEmpty, list_lock);
+         // lock_release(list_lock);
+         // current->status = THREAD_READY;
         
       }
     }

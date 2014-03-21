@@ -95,23 +95,29 @@ thread_init (void)
 {
   ASSERT (intr_get_level () == INTR_OFF);
 
-  lock_init(&list_lock);
-
-  lock_init (&tid_lock);
+  
 
   list_init (&ready_list);
   list_init (&all_list);
+ 
+
+  lock_init (&tid_lock);
+
+  lock_init(&list_lock);
 
   cond_init(&notFull);
   cond_init(&notEmpty);
-
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
-  //sema_init(&sema, 0);  
+  printf("tid of main thread is %d\n", initial_thread->tid);
+  printf("tid of current thread is %d\n", &thread_current()->tid);
+
+  
+  
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -121,14 +127,20 @@ thread_start (void)
 {
   /* Create the idle thread. */
   struct semaphore idle_started;
+
   sema_init (&idle_started, 0);
   thread_create ("idle", PRI_MIN, idle, &idle_started);
+   printf("tid of idle thread is %d\n", &idle_thread->tid);
 
   /* Start preemptive thread scheduling. */
   intr_enable ();
 
+  //printf("leaving thread_start]\n");
   /* Wait for the idle thread to initialize idle_thread. */
+  
   sema_down (&idle_started);
+  printf("i'm back bitchhhh\n");
+
 }
 
 /* Called by the timer interrupt handler at each timer tick.
@@ -222,13 +234,14 @@ thread_create (const char *name, int priority,
 
 
 //mine
-  list_insert_ordered (&ready_list, &t->elem, comparative, 0);
-  t->status = THREAD_READY;
+  // list_insert_ordered (&ready_list, &t->elem, comparative, 0);
+  // t->status = THREAD_READY;
   //end mine
 
 
 
   intr_set_level (old_level);
+
 
   /* Add to run queue. */
   
@@ -240,7 +253,10 @@ thread_create (const char *name, int priority,
   // do{
   //   cond_wait(&notFull, &list_lock);
   // }while(0);
-   //thread_unblock (t);
+     thread_unblock (t);
+     printf("tid of new thread is %d\n", t->tid);
+
+
 
   // t->status = THREAD_RUNNING;
   // cond_signal(&notEmpty, &list_lock);
@@ -263,7 +279,7 @@ thread_block (void)
   ASSERT (intr_get_level () == INTR_OFF);
   //printf("going to current in blocked: %d\n",thread_current()->status);
   
-  //thread_current ()->status = THREAD_BLOCKED;
+  //running_thread()->status = THREAD_RUNNING;
   thread_current()->status = THREAD_BLOCKED; 
   //printf("came back from current in blocked\n");
   schedule ();
@@ -291,7 +307,7 @@ thread_unblock (struct thread *t)
   //CHANGED HERE **
   //int oldPri = thread_get_priority();
   //t->status = THREAD_RUNNING;
-  
+  printf("i'm in unblock the tid of thread is %d\n", t->tid);
   list_insert_ordered (&ready_list, &t->elem, comparative, 0);
   //t->status = THREAD_BLOCKED;
   //list_sort(&ready_list, comparative, 0);
@@ -327,7 +343,7 @@ thread_current (void)
      recursion can cause stack overflow. */
   ASSERT (is_thread (t));
   ASSERT (t->status == THREAD_RUNNING);
-
+  
   return t;
 }
 
@@ -379,16 +395,25 @@ thread_yield (void)
     //list_push_back (&ready_list, &t->elem);
   //CHANGED HERE **
   // cur->status = THREAD_RUNNING;
-   lock_acquire(&list_lock);
+
+
+
+   // lock_acquire(&list_lock);
    //do{
-     cond_wait(&notFull, &list_lock);
+     // cond_wait(&notFull, &list_lock);
    //}while(0);
    list_insert_ordered (&ready_list, &cur->elem, comparative, 0);
-   cond_signal(&notEmpty, &list_lock);
-   lock_release(&list_lock);
-  list_sort(&ready_list, comparative, 0);
-  list_reverse(&ready_list);
+
+
+
+
+  //  cond_signal(&notEmpty, &list_lock);
+  //  lock_release(&list_lock);
+  // list_sort(&ready_list, comparative, 0);
+  // list_reverse(&ready_list);
   }
+
+
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -478,7 +503,7 @@ idle (void *idle_started_ UNUSED)
 
   idle_thread = thread_current ();
 
-  
+  printf("tid of idle thread is %d\n", &idle_thread->tid);
   sema_up (idle_started);
 
   for (;;) 
@@ -581,13 +606,19 @@ next_thread_to_run (void)
     // struct thread * temp = list_entry (list_max(&ready_list, comparative, 0), struct thread, elem);
     // enum thread_status oldStatus = temp->status;
     // temp->status = THREAD_RUNNING;
-    lock_acquire(&list_lock);
-    while(list_empty(&ready_list)){
-      cond_wait(&notEmpty, &list_lock);
-    }
+
+
+    // lock_acquire(&list_lock);
+    // while(list_empty(&ready_list)){
+    //   cond_wait(&notEmpty, &list_lock);
+    // }
+
+
     popped = list_entry (list_pop_back(&ready_list), struct thread, elem);
-    cond_broadcast(&notFull, &list_lock);
-    lock_release(&list_lock);
+
+
+    // cond_broadcast(&notFull, &list_lock);
+    // lock_release(&list_lock);
     // temp->status = oldStatus;
     return popped;
   }
@@ -658,7 +689,6 @@ schedule (void)
   struct thread *cur = running_thread ();
   struct thread *next = next_thread_to_run ();
   struct thread *prev = NULL;
-
   ASSERT (intr_get_level () == INTR_OFF);
   ASSERT (cur->status != THREAD_RUNNING);
   ASSERT (is_thread (next));
