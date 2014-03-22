@@ -108,7 +108,11 @@ timer_sleep (int64_t ticks)
   if(ticks > 0){
     enum intr_level old = intr_disable();
     thread_current()->currentticks = ticks;
-    printf("tid of current thread is in sleep %d\n", &thread_current()->tid);
+    
+
+    //**printf("tid of current thread is in sleep %d\n", &thread_current()->tid);
+    
+
     //printf("Calling thread block in timer sleep\n");
     thread_block();
     //printf("Came back from thread block in timer sleep\n");
@@ -219,7 +223,7 @@ static void thread_rise(struct thread *current){
          // current->status = THREAD_RUNNING;
          // lock_acquire(list_lock);
 
-          
+          //timer_print_stats();
           //do{
           // cond_wait(notFull, list_lock);
          //}while(0);

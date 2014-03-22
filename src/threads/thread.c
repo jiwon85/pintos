@@ -113,8 +113,10 @@ thread_init (void)
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
-  printf("tid of main thread is %d\n", initial_thread->tid);
-  printf("tid of current thread is %d\n", &thread_current()->tid);
+  
+
+  //**printf("tid of main thread is %d\n", initial_thread->tid);
+  //**printf("tid of current thread is %d\n", &thread_current()->tid);
 
   
   
@@ -130,7 +132,10 @@ thread_start (void)
 
   sema_init (&idle_started, 0);
   thread_create ("idle", PRI_MIN, idle, &idle_started);
-   printf("tid of idle thread is %d\n", &idle_thread->tid);
+  
+
+
+  //**printf("tid of idle thread is %d\n", &idle_thread->tid);
 
   /* Start preemptive thread scheduling. */
   intr_enable ();
@@ -139,7 +144,8 @@ thread_start (void)
   /* Wait for the idle thread to initialize idle_thread. */
   
   sema_down (&idle_started);
-  printf("i'm back bitchhhh\n");
+  
+  //**printf("i'm back\n");
 
 }
 
@@ -254,7 +260,11 @@ thread_create (const char *name, int priority,
   //   cond_wait(&notFull, &list_lock);
   // }while(0);
      thread_unblock (t);
-     printf("tid of new thread is %d\n", t->tid);
+     
+
+
+
+     //**printf("tid of new thread is %d\n", t->tid);
 
 
 
@@ -304,11 +314,17 @@ thread_unblock (struct thread *t)
 
   ASSERT (t->status == THREAD_BLOCKED);
   //list_push_back (&ready_list, &t->elem);
+  
   //CHANGED HERE **
   //int oldPri = thread_get_priority();
   //t->status = THREAD_RUNNING;
-  printf("i'm in unblock the tid of thread is %d\n", t->tid);
+  
+
+  //**printf("i'm in unblock the tid of thread is %d\n", t->tid);
+  
+
   list_insert_ordered (&ready_list, &t->elem, comparative, 0);
+  
   //t->status = THREAD_BLOCKED;
   //list_sort(&ready_list, comparative, 0);
   //list_reverse(&ready_list);
@@ -442,6 +458,10 @@ thread_set_priority (int new_priority)
 {
   //printf("going to current in setpri\n");
   thread_current ()->priority = new_priority;
+  struct thread *max = list_entry (list_max(&ready_list, comparative, 0), struct thread, elem);
+  if(&max->priority > new_priority){
+    thread_yield();
+  }
   //do something here to interrupt if new_priority isn't the highest on the list.
   //printf("coming from current in setpri\n");
 }
@@ -503,8 +523,13 @@ idle (void *idle_started_ UNUSED)
 
   idle_thread = thread_current ();
 
-  printf("tid of idle thread is %d\n", &idle_thread->tid);
+  
+
+  //**printf("tid of idle thread is %d\n", &idle_thread->tid);
+
+
   sema_up (idle_started);
+
 
   for (;;) 
     {

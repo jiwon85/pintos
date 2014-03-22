@@ -74,7 +74,11 @@ sema_down (struct semaphore *sema)
 
 
       list_push_back (&sema->waiters, &thread_current ()->elem);
-      printf("tid of current in SEMA DOWN thread is %d\n", &thread_current()->tid);
+      
+
+      //**printf("tid of current in SEMA DOWN thread is %d\n", &thread_current()->tid);
+      
+
       thread_block ();
 
     }
