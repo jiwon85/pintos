@@ -21,6 +21,10 @@
 /* Number of timer ticks since OS booted. */
 static int64_t ticks;
 
+
+//my code
+static struct list sleeping_list;
+
 /* Number of loops per timer tick.
    Initialized by timer_calibrate(). */
 static unsigned loops_per_tick;
@@ -38,6 +42,7 @@ static void thread_rise(struct thread *current);
 void
 timer_init (void) 
 {
+  list_init(&sleeping_list);
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
 }
@@ -105,19 +110,21 @@ timer_sleep (int64_t ticks)
   */
   ASSERT (intr_get_level () == INTR_ON);
    //TEST
+  enum intr_level old = intr_disable();
   if(ticks > 0){
-    enum intr_level old = intr_disable();
+    
     thread_current()->currentticks = ticks;
     
 
     //**printf("tid of current thread is in sleep %d\n", &thread_current()->tid);
     
-
+    list_push_back(&sleeping_list, &thread_current()->sleep_elem);
     //printf("Calling thread block in timer sleep\n");
     thread_block();
     //printf("Came back from thread block in timer sleep\n");
-    intr_set_level(old);
+    
   }
+  intr_set_level(old);
   //disable interrupts while blocking thread
 
   //enum intr_level old = intr_disable();
@@ -203,10 +210,18 @@ timer_print_stats (void)
 static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
+  enum intr_level old = intr_disable();
   ticks++;
   thread_tick ();
-  enum intr_level old = intr_disable();
-  thread_foreach(thread_rise, 0);
+  
+  //thread_foreach(thread_rise, 0);
+  struct list_elem * e;
+  for (e = list_begin (&sleeping_list); e != list_end (&sleeping_list);
+       e = list_next (e))
+    {
+      struct thread *t = list_entry (e, struct thread, sleep_elem);
+      thread_rise(t);
+    }
   intr_set_level(old);
 
 }
@@ -227,7 +242,8 @@ static void thread_rise(struct thread *current){
           //do{
           // cond_wait(notFull, list_lock);
          //}while(0);
-         thread_unblock(current);
+        list_remove(&current->sleep_elem);
+        thread_unblock(current);
          // current->status = THREAD_RUNNING;
          // cond_signal(notEmpty, list_lock);
          // lock_release(list_lock);

@@ -237,7 +237,7 @@ thread_create (const char *name, int priority,
   sf = alloc_frame (t, sizeof *sf);
   sf->eip = switch_entry;
   sf->ebp = 0;
-
+  intr_set_level (old_level);
 
 //mine
   // list_insert_ordered (&ready_list, &t->elem, comparative, 0);
@@ -245,8 +245,8 @@ thread_create (const char *name, int priority,
   //end mine
 
 
-
-  intr_set_level (old_level);
+  thread_unblock (t);
+  
 
 
   /* Add to run queue. */
@@ -259,7 +259,7 @@ thread_create (const char *name, int priority,
   // do{
   //   cond_wait(&notFull, &list_lock);
   // }while(0);
-     thread_unblock (t);
+     
      
 
 
@@ -332,7 +332,11 @@ thread_unblock (struct thread *t)
   // if(t->priority > oldPri){
   //   thread_yield();
   // }
+  if(t->priority > &thread_current()->priority){
+    thread_yield();
+  }
   intr_set_level (old_level);
+  
   
 }
 
@@ -400,13 +404,14 @@ thread_yield (void)
  
   //printf("going to current in yield\n");
 
-  struct thread *cur = thread_current ();
+  
   //printf("came back from current in yield\n");
   enum intr_level old_level;
   
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
+  struct thread *cur = thread_current ();
   if (cur != idle_thread){ 
     //list_push_back (&ready_list, &t->elem);
   //CHANGED HERE **
@@ -457,13 +462,13 @@ void
 thread_set_priority (int new_priority) 
 {
   //printf("going to current in setpri\n");
+
   thread_current ()->priority = new_priority;
   struct thread *max = list_entry (list_max(&ready_list, comparative, 0), struct thread, elem);
   if(&max->priority > new_priority){
     thread_yield();
   }
-  //do something here to interrupt if new_priority isn't the highest on the list.
-  //printf("coming from current in setpri\n");
+
 }
 
 /* Returns the current thread's priority. */
@@ -627,10 +632,9 @@ next_thread_to_run (void)
   if (list_empty (&ready_list))
     return idle_thread;
   else{
-    struct thread * popped; 
-    // struct thread * temp = list_entry (list_max(&ready_list, comparative, 0), struct thread, elem);
-    // enum thread_status oldStatus = temp->status;
-    // temp->status = THREAD_RUNNING;
+    //struct thread * popped; 
+    struct thread * temp = list_entry (list_max(&ready_list, comparative, 0), struct thread, elem);
+    list_remove(&temp->elem);
 
 
     // lock_acquire(&list_lock);
@@ -639,13 +643,13 @@ next_thread_to_run (void)
     // }
 
 
-    popped = list_entry (list_pop_back(&ready_list), struct thread, elem);
+    //popped = list_entry (list_pop_back(&ready_list), struct thread, elem);
 
 
     // cond_broadcast(&notFull, &list_lock);
     // lock_release(&list_lock);
-    // temp->status = oldStatus;
-    return popped;
+
+    return temp;
   }
 }  
 
