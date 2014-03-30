@@ -332,6 +332,7 @@ thread_unblock (struct thread *t)
   // if(t->priority > oldPri){
   //   thread_yield();
   // }
+  printf("%d > %d\n",t->priority,thread_current()->priority); 
   if(t->priority > &thread_current()->priority){
     thread_yield();
   }
