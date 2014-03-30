@@ -91,6 +91,7 @@ struct thread
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
+    int called; 
     int64_t currentticks; //number of ticks so far to avoid busy waiting
 
     /* Shared between thread.c and synch.c. */

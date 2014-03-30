@@ -246,7 +246,6 @@ thread_create (const char *name, int priority,
 
 
   thread_unblock (t);
-  
 
 
   /* Add to run queue. */
@@ -332,10 +331,15 @@ thread_unblock (struct thread *t)
   // if(t->priority > oldPri){
   //   thread_yield();
   // }
-  printf("%d > %d\n",t->priority,thread_current()->priority); 
-  if(t->priority > &thread_current()->priority){
-    thread_yield();
+  //printf("%d > %d\n",t->priority,thread_current()->priority); 
+  if(!t->called) {
+    t->called = 1; 
+  } else {
+    if(t->priority > &thread_current()->priority){
+      thread_yield();
+    }
   }
+  
   intr_set_level (old_level);
   
   
@@ -428,7 +432,6 @@ thread_yield (void)
 
 
 
-
   //  cond_signal(&notEmpty, &list_lock);
   //  lock_release(&list_lock);
   // list_sort(&ready_list, comparative, 0);
@@ -464,11 +467,15 @@ thread_set_priority (int new_priority)
 {
   //printf("going to current in setpri\n");
 
+  enum intr_level old_level = intr_disable ();
+
   thread_current ()->priority = new_priority;
   struct thread *max = list_entry (list_max(&ready_list, comparative, 0), struct thread, elem);
   if(&max->priority > new_priority){
     thread_yield();
   }
+
+  intr_set_level (old_level);
 
 }
 
@@ -606,6 +613,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
+  t->called = 0; 
   list_push_back (&all_list, &t->allelem);
 }
 
