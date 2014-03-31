@@ -7,7 +7,6 @@
 #include "threads/interrupt.h"
 #include "threads/synch.h"
 #include "threads/thread.h"
-//#include "kernel/list.h"
   
 /* See [8254] for hardware details of the 8254 timer chip. */
 
@@ -21,10 +20,6 @@
 /* Number of timer ticks since OS booted. */
 static int64_t ticks;
 
-
-//my code
-static struct list sleeping_list;
-
 /* Number of loops per timer tick.
    Initialized by timer_calibrate(). */
 static unsigned loops_per_tick;
@@ -34,15 +29,12 @@ static bool too_many_loops (unsigned loops);
 static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
-static void thread_rise(struct thread *current);
-
 
 /* Sets up the timer to interrupt TIMER_FREQ times per second,
    and registers the corresponding interrupt. */
 void
 timer_init (void) 
 {
-  list_init(&sleeping_list);
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
 }
@@ -97,43 +89,11 @@ timer_elapsed (int64_t then)
 void
 timer_sleep (int64_t ticks) 
 {
-  //int64_t start = timer_ticks ();
+  int64_t start = timer_ticks ();
 
-  //jiwon's old code
-  /*thread_current()->currentticks = ticks;
   ASSERT (intr_get_level () == INTR_ON);
-  enum intr_level old = intr_disable();
-  
-  list_remove(&thread_current()->elem);
-  thread_block();
-  intr_set_level(old);
-  */
-  ASSERT (intr_get_level () == INTR_ON);
-   //TEST
-  enum intr_level old = intr_disable();
-  if(ticks > 0){
-    
-    thread_current()->currentticks = ticks;
-    
-
-    //**printf("tid of current thread is in sleep %d\n", &thread_current()->tid);
-    
-    list_push_back(&sleeping_list, &thread_current()->sleep_elem);
-    //printf("Calling thread block in timer sleep\n");
-    thread_block();
-    //printf("Came back from thread block in timer sleep\n");
-    
-  }
-  intr_set_level(old);
-  //disable interrupts while blocking thread
-
-  //enum intr_level old = intr_disable();
-  //thread_block();
-  
-  //intr_set_level(old);
-
-  // while (timer_elapsed (start) < ticks) 
-  //   thread_yield ();
+  while (timer_elapsed (start) < ticks) 
+    thread_yield ();
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -210,48 +170,8 @@ timer_print_stats (void)
 static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
-  enum intr_level old = intr_disable();
   ticks++;
   thread_tick ();
-  
-  //thread_foreach(thread_rise, 0);
-  struct list_elem * e;
-  for (e = list_begin (&sleeping_list); e != list_end (&sleeping_list);
-       e = list_next (e))
-    {
-      struct thread *t = list_entry (e, struct thread, sleep_elem);
-      thread_rise(t);
-    }
-  intr_set_level(old);
-
-}
-
-static void thread_rise(struct thread *current){
-  if(current->status == THREAD_BLOCKED){
-    if(current->currentticks > 0){
-      current->currentticks--;
-      if(current->currentticks == 0){
-
-         // struct lock * list_lock= getLock();
-         // struct condition * notFull = getNotFull();
-         // struct condition * notEmpty = getNotEmpty();
-         // current->status = THREAD_RUNNING;
-         // lock_acquire(list_lock);
-
-          //timer_print_stats();
-          //do{
-          // cond_wait(notFull, list_lock);
-         //}while(0);
-        list_remove(&current->sleep_elem);
-        thread_unblock(current);
-         // current->status = THREAD_RUNNING;
-         // cond_signal(notEmpty, list_lock);
-         // lock_release(list_lock);
-         // current->status = THREAD_READY;
-        
-      }
-    }
-  }
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer
@@ -304,7 +224,7 @@ real_time_sleep (int64_t num, int32_t denom)
     {
       /* We're waiting for at least one full timer tick.  Use
          timer_sleep() because it will yield the CPU to other
-         processes. */                    
+         processes. */                
       timer_sleep (ticks); 
     }
   else 

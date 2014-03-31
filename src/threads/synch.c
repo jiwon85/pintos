@@ -65,22 +65,11 @@ sema_down (struct semaphore *sema)
   ASSERT (sema != NULL);
   ASSERT (!intr_context ());
 
- 
-
   old_level = intr_disable ();
   while (sema->value == 0) 
     {
-
-
-
       list_push_back (&sema->waiters, &thread_current ()->elem);
-      
-
-      //**printf("tid of current in SEMA DOWN thread is %d\n", &thread_current()->tid);
-      
-
       thread_block ();
-
     }
   sema->value--;
   intr_set_level (old_level);
@@ -94,7 +83,6 @@ sema_down (struct semaphore *sema)
 bool
 sema_try_down (struct semaphore *sema) 
 {
-  
   enum intr_level old_level;
   bool success;
 
@@ -254,7 +242,7 @@ bool
 lock_held_by_current_thread (const struct lock *lock) 
 {
   ASSERT (lock != NULL);
-  //printf("lock_held_by_current_thread\n");
+
   return lock->holder == thread_current ();
 }
 
