@@ -50,27 +50,7 @@ process_execute (const char *file_name)
 static void
 start_process (void *file_name_)
 {
-  char * command_line = file_name_;
-  char * file_name;
-  //parse here 
-
-  char ** buffer = malloc (sizeof(char *) *10);
-  int size = 10;
-
-  char *token, *save_ptr;
-  int counter = 0;
-  for (token = strtok_r (command_line, " ", &save_ptr); token != NULL;
-        token = strtok_r (NULL, " ", &save_ptr)){
-      if(counter == size){
-        size = size*2;
-        buffer = realloc(buffer, sizeof(char *)*size);
-      }
-      buffer[counter] = token;
-      counter++;
-  }
-  file_name = buffer[0];
-     
-
+  char *file_name = file_name_;
   struct intr_frame if_;
   bool success;
 
@@ -83,12 +63,8 @@ start_process (void *file_name_)
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
-  if (!success){ 
-    //changed here
-
+  if (!success) 
     thread_exit ();
-
-  }
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
@@ -121,7 +97,7 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
-  printf("%s: exit(%d)\n", cur->name, 0);
+
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;
