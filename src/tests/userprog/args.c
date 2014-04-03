@@ -8,6 +8,7 @@
 int
 main (int argc, char *argv[]) 
 {
+  printf("In args test\n");
   int i;
 
   test_name = "args";

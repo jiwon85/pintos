@@ -50,6 +50,8 @@ process_execute (const char *file_name)
 static void
 start_process (void *file_name_)
 {
+  int stackSize = 0; 
+
   struct intr_frame if_;
   bool success;
 
@@ -58,7 +60,7 @@ start_process (void *file_name_)
 
 
   char * command_line = file_name_;
-  char * file_name;
+  const char * file_name;
   //parse here 
 
   char ** buffer = malloc (sizeof(char *) *10);
@@ -78,52 +80,53 @@ start_process (void *file_name_)
       counter++;
   }
   file_name = buffer[0];
+  printf("This is the filename: %s\n", file_name);
   
-  char ** addrArray = malloc (sizeof(char*) * counter); //creates address to hold array of address of strings;
-  int i;
-  for(i = counter-1; i>=0; i--){
-    const char * tempStr = buffer[i];
+  // char ** addrArray = malloc (sizeof(char*) * counter); //creates address to hold array of address of strings;
+  // int i;
+  // for(i = counter-1; i>=0; i--){
+  //   const char * tempStr = buffer[i];
     
-    int charBufferSize = 10;
-    char * charBuffer = malloc (sizeof(char) * charBufferSize );
-    char tempChar;
-    int bufferCounter = 0;
-    do{
-      if(bufferCounter == charBufferSize){
-        charBufferSize *= 2;
-        charBuffer = realloc (charBuffer, sizeof(char) * charBufferSize); 
-      }
-      charBuffer[bufferCounter] = tempChar;
-      bufferCounter++;
-    } while((tempChar = *++tempStr) != '\0');
+  //   int charBufferSize = 10;
+  //   char * charBuffer = malloc (sizeof(char) * charBufferSize );
+  //   char tempChar;
+  //   int bufferCounter = 0;
+  //   do{
+  //     if(bufferCounter == charBufferSize){
+  //       charBufferSize *= 2;
+  //       charBuffer = realloc (charBuffer, sizeof(char) * charBufferSize); 
+  //     }
+  //     charBuffer[bufferCounter] = tempChar;
+  //     bufferCounter++;
+  //   } while((tempChar = *++tempStr) != '\0');
 
-    espTemp--;
-    * espTemp = '\0';
+  //   espTemp--;
+  //   * espTemp = '\0';
     
-    int j;
-    for(j = bufferCounter - 1; j >= 0; j--){
-    espTemp--;
-    *espTemp = charBuffer[j];
-    }
-    addrArray[i] = espTemp;   
-  }
-  //null pointer sentilnel
-  espTemp--;     
-  *espTemp = 0;
+  //   int j;
+  //   for(j = bufferCounter - 1; j >= 0; j--){
+  //   espTemp--;
+  //   *espTemp = charBuffer[j];
+  //   }
+  //   addrArray[i] = espTemp;   
+  // }
+  // //null pointer sentilnel
+  // espTemp--;     
+  // *espTemp = 0;
 
-  espTemp-=4;
-  char * addr = 0;
-  *espTemp = addr;
-  int k;
-  for(k = counter-1; k>=0; k--){
-    espTemp-=4;
-    espTemp = addrArray[k];
-  }
-  espTemp-= 4;
-  espTemp = counter;
+  // espTemp-=4;
+  // char * addr = 0;
+  // *espTemp = addr;
+  // int k;
+  // for(k = counter-1; k>=0; k--){
+  //   espTemp-=4;
+  //   espTemp = addrArray[k];
+  // }
+  // espTemp-= 4;
+  // espTemp = counter;
 
-  espTemp-= 4;
-  espTemp = 0;
+  // espTemp-= 4;
+  // espTemp = 0;
     
 
  
@@ -131,7 +134,10 @@ start_process (void *file_name_)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
 
-  hex_dump(file_name);
+  const void* ofs;
+
+
+  //hex_dump(espTemp, ofs, PHYS_BASE, 1);
 
   success = load (file_name, &if_.eip, espTemp);
 
@@ -287,6 +293,7 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
 bool
 load (const char *file_name, void (**eip) (void), void **esp) 
 {
+  printf("In load function\n");
   struct thread *t = thread_current ();
   struct Elf32_Ehdr ehdr;
   struct file *file = NULL;
@@ -516,7 +523,7 @@ setup_stack (void **esp)
     {
       success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
       if (success)
-        *esp = PHYS_BASE-12;
+        *esp = PHYS_BASE;
       else
         palloc_free_page (kpage);
     }
