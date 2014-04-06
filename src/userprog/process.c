@@ -67,7 +67,7 @@ start_process (void *file_name_)
   char ** buffer = malloc (sizeof(char *) *10);
   int size = 10;
 
-  void ** espTemp = &if_.esp;
+  void * espTemp = &if_.esp;
 
   char *token, *save_ptr;
   int counter = 0;
@@ -83,9 +83,10 @@ start_process (void *file_name_)
   file_name = buffer[0];
   printf("This is the filename: %s\n", file_name);
   
-  char ** addrArray = malloc (sizeof(char*) * counter); //creates address to hold array of address of strings;
+  const char ** addrArray = malloc (sizeof(char*) * counter); //creates address to hold array of address of strings;
    int i;
    for(i = counter-1; i>=0; i--){
+    printf("top of for loop index %d\n", i);    
      const char * tempStr = buffer[i];
    
      int charBufferSize = 10;
@@ -106,31 +107,54 @@ start_process (void *file_name_)
      } //while((tempChar = *tempStr) != '\0');
 
      espTemp--;
-     * espTemp = '\0';
+     printf("%08x\n", espTemp);
+     char * tempPtr = (char *) espTemp;
+     *tempPtr = '\0';
     
+    //memcpy(espTemp, "\0", 1);
      // adding characters from command line in reverse order 
      int j;
      for(j = bufferCounter - 1; j >= 0; j--){
        espTemp--;
-       *espTemp = charBuffer[j];
+       tempPtr = (char *) espTemp;
+       *tempPtr = charBuffer[j];
+       //memcpy(espTemp, charBuffer[j], 1);
+       printf("%08x\n", espTemp);
+       printf("%c.\n",charBuffer[j]); 
      }
-     addrArray[i] = espTemp;   
+     addrArray[i] = espTemp;
+     printf("saving this %08x\n", espTemp);   
    }
+
+
+   //temporary int ptr
+
    //null pointer sentilnel
-   espTemp--;     
-   //*espTemp = 0;
+   espTemp--;
+   int * tempIntPtr = (int *) espTemp;     
+   *tempIntPtr = 0;
+
+   //memcpy(espTemp, &zero, 4);
    espTemp-=4;
-   char * addr = 0;
-   *espTemp = addr;
+   tempIntPtr = (int *) espTemp;     
+   *tempIntPtr = 0;
+   //memcpy(espTemp, &zero, 4);
    int k;
    for(k = counter-1; k>=0; k--){
      espTemp-=4;
-     *espTemp = addrArray[k];
+     char * tempPtr = (char *) espTemp;
+     *tempPtr = addrArray[k];
+     //memcpy(espTemp, addrArray[k], 4);
    }
    espTemp-= 4;
-   *espTemp = counter;
+   //int four = 4;
+   tempIntPtr = (int *) espTemp;     
+   *tempIntPtr = counter;
+   //memcpy(espTemp, &four, 4);
    espTemp-= 4;
-   *espTemp = 0;
+   tempIntPtr = (int *) espTemp;     
+   *tempIntPtr = 0;
+   //memcpy(espTemp, &zero, 4);
     
 
  
