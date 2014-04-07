@@ -17,7 +17,6 @@
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
-#include <inttypes.h> 
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
@@ -64,10 +63,10 @@ start_process (void *file_name_)
   const char * file_name;
   //parse here 
 
-  char ** buffer = malloc (sizeof(char *) *10);
+  char ** buffer = malloc (sizeof(char *) *10); //buffer for parsed arguments
   int size = 10;
 
-  void * espTemp = &if_.esp;
+  void ** espTemp = &if_.esp; //stack pointer
 
   char *token, *save_ptr;
   int counter = 0;
@@ -83,78 +82,51 @@ start_process (void *file_name_)
   file_name = buffer[0];
   printf("This is the filename: %s\n", file_name);
   
-  const char ** addrArray = malloc (sizeof(char*) * counter); //creates address to hold array of address of strings;
+   char ** addrArray = malloc (sizeof(char*) * counter); //creates address to hold array of address of strings;
    int i;
    for(i = counter-1; i>=0; i--){
-    printf("top of for loop index %d\n", i);    
-     const char * tempStr = buffer[i];
-   
-     int charBufferSize = 10;
-     char * charBuffer = malloc (sizeof(char) * charBufferSize );
-     char tempChar;
-     int bufferCounter = 0;
-     //do{
-     // saving the characters from command line 
-     while((tempChar = *tempStr++) != '\0'){ 
+   const char * tempStr = buffer[i];
+    
+   int charBufferSize = 10;
+   char * charBuffer = malloc (sizeof(char) * charBufferSize );
+   char tempChar;
+   int bufferCounter = 0;
+   do{
        if(bufferCounter == charBufferSize){
          charBufferSize *= 2;
          charBuffer = realloc (charBuffer, sizeof(char) * charBufferSize); 
        }
        charBuffer[bufferCounter] = tempChar;
-       bufferCounter++; 
-       printf("%c.\n",tempChar); 
-       //if(bufferCounter>1) *tempStr++; 
-     } //while((tempChar = *tempStr) != '\0');
+       bufferCounter++;
+     } while((tempChar = *++tempStr) != '\0');
 
      espTemp--;
-     printf("%08x\n", espTemp);
-     char * tempPtr = (char *) espTemp;
-     *tempPtr = '\0';
+     * espTemp = '\0';
     
-    //memcpy(espTemp, "\0", 1);
-     // adding characters from command line in reverse order 
      int j;
      for(j = bufferCounter - 1; j >= 0; j--){
        espTemp--;
-       tempPtr = (char *) espTemp;
-       *tempPtr = charBuffer[j];
-       //memcpy(espTemp, charBuffer[j], 1);
-       printf("%08x\n", espTemp);
-       printf("%c.\n",charBuffer[j]); 
+       *espTemp = charBuffer[j];
      }
-     addrArray[i] = espTemp;
-     printf("saving this %08x\n", espTemp);   
+     addrArray[i] = espTemp;   
    }
+  // //null pointer sentilnel
+   espTemp--;     
+   *espTemp = 0;
 
-
-   //temporary int ptr
-
-   //null pointer sentilnel
-   espTemp--;
-   int * tempIntPtr = (int *) espTemp;     
-   *tempIntPtr = 0;
-
-   //memcpy(espTemp, &zero, 4);
    espTemp-=4;
-   tempIntPtr = (int *) espTemp;     
-   *tempIntPtr = 0;
-   //memcpy(espTemp, &zero, 4);
+   char * addr = 0;
+   *espTemp = addr;
    int k;
    for(k = counter-1; k>=0; k--){
      espTemp-=4;
-     char * tempPtr = (char *) espTemp;
-     *tempPtr = addrArray[k];
-     //memcpy(espTemp, addrArray[k], 4);
+     espTemp = addrArray[k];
    }
    espTemp-= 4;
-   //int four = 4;
-   tempIntPtr = (int *) espTemp;     
-   *tempIntPtr = counter;
-   //memcpy(espTemp, &four, 4);
+   espTemp = counter;
+
    espTemp-= 4;
-   tempIntPtr = (int *) espTemp;     
-   *tempIntPtr = 0;
-   //memcpy(espTemp, &zero, 4);
+   espTemp = 0;
     
 
  
@@ -162,11 +134,8 @@ start_process (void *file_name_)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
 
-  //const void* ofs;
-  uintptr_t dump_ofs;
-  const void *dump_buf;
-  size_t dump_size = 1024;
-  hex_dump(dump_ofs, dump_buf, dump_size, 1);
+  const void* ofs;
+
   //hex_dump(espTemp, ofs, PHYS_BASE, 1);
 
   success = load (file_name, &if_.eip, espTemp);
