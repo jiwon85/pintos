@@ -66,7 +66,7 @@ start_process (void *file_name_)
   char ** buffer = malloc (sizeof(char *) *10); //buffer for parsed arguments
   int size = 10;
 
-  void ** espTemp = &if_.esp; //stack pointer
+  void * espTemp = &if_.esp;
 
   char *token, *save_ptr;
   int counter = 0;
@@ -82,51 +82,86 @@ start_process (void *file_name_)
   file_name = buffer[0];
   printf("This is the filename: %s\n", file_name);
   
-   char ** addrArray = malloc (sizeof(char*) * counter); //creates address to hold array of address of strings;
+  const char ** addrArray = malloc (sizeof(char*) * counter); //creates address to hold array of address of strings;
    int i;
    for(i = counter-1; i>=0; i--){
-   const char * tempStr = buffer[i];
-    
-   int charBufferSize = 10;
-   char * charBuffer = malloc (sizeof(char) * charBufferSize );
-   char tempChar;
-   int bufferCounter = 0;
-   do{
-       if(bufferCounter == charBufferSize){
-         charBufferSize *= 2;
-         charBuffer = realloc (charBuffer, sizeof(char) * charBufferSize); 
-       }
-       charBuffer[bufferCounter] = tempChar;
+    printf("top of for loop index %d\n", i);
+     const char * tempStr = buffer[i];
+   
+     // int charBufferSize = 10;
+     // char * charBuffer = malloc (sizeof(char) * charBufferSize );
+     char tempChar;
+     int bufferCounter = 0;
+     //do{
+     // // saving the characters from command line
+     while((tempChar = *tempStr++) != '\0'){
+       // if(bufferCounter == charBufferSize){
+       //   charBufferSize *= 2;
+       //   charBuffer = realloc (charBuffer, sizeof(char) * charBufferSize);
+       // }
+       // charBuffer[bufferCounter] = tempChar;
        bufferCounter++;
-     } while((tempChar = *++tempStr) != '\0');
+     //   printf("%c.\n",tempChar);
+       //if(bufferCounter>1) *tempStr++;
+     } //while((tempChar = *tempStr) != '\0');
+     //charBuffer[bufferCounter] = '\0';
 
-     espTemp--;
-     * espTemp = '\0';
+     espTemp-=bufferCounter;
+     const char * tempStrPtr = (const char *) espTemp;
+     strlcpy(buffer[i], tempStrPtr, bufferCounter+1);
+
+
+     // espTemp--;
+     // printf("%08x\n", espTemp);
+     // char * tempPtr = (char *) espTemp;
+     // *tempPtr = '\0';
     
-     int j;
-     for(j = bufferCounter - 1; j >= 0; j--){
-       espTemp--;
-       *espTemp = charBuffer[j];
-     }
-     addrArray[i] = espTemp;   
-   }
-  // //null pointer sentilnel
-   espTemp--;     
-   *espTemp = 0;
+    //memcpy(espTemp, "\0", 1);
+     // adding characters from command line in reverse order
+     // int j;
+     // for(j = bufferCounter - 1; j >= 0; j--){
+     //   espTemp--;
+     //   tempPtr = (char *) espTemp;
+     //   *tempPtr = charBuffer[j];
+     //   //memcpy(espTemp, charBuffer[j], 1);
+     //   printf("%08x\n", espTemp);
+     //   printf("%c.\n",charBuffer[j]);
+     // }
 
+
+     addrArray[i] = espTemp;
+     printf("saving this %08x\n", espTemp);
+   }
+
+
+   //temporary int ptr
+
+   //null pointer sentilnel
+   espTemp--;
+   int * tempIntPtr = (int *) espTemp;
+   *tempIntPtr = 0;
+
+   //memcpy(espTemp, &zero, 4);
    espTemp-=4;
-   char * addr = 0;
-   *espTemp = addr;
+   tempIntPtr = (int *) espTemp;
+   *tempIntPtr = 0;
+   //memcpy(espTemp, &zero, 4);
    int k;
    for(k = counter-1; k>=0; k--){
      espTemp-=4;
-     espTemp = addrArray[k];
+     char * tempPtr = (char *) espTemp;
+     *tempPtr = addrArray[k];
+     //memcpy(espTemp, addrArray[k], 4);
    }
    espTemp-= 4;
-   espTemp = counter;
-
+   //int four = 4;
+   tempIntPtr = (int *) espTemp;
+   *tempIntPtr = counter;
+   //memcpy(espTemp, &four, 4);
    espTemp-= 4;
-   espTemp = 0;
+   tempIntPtr = (int *) espTemp;
+   *tempIntPtr = 0;
+   //memcpy(espTemp, &zero, 4);
     
 
  
@@ -134,15 +169,18 @@ start_process (void *file_name_)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
 
-  const void* ofs;
-
+  //const void* ofs;
+  uintptr_t dump_ofs;
+  const void *dump_buf;
+  size_t dump_size = 1024;
+  hex_dump(dump_ofs, dump_buf, dump_size, 1);
   //hex_dump(espTemp, ofs, PHYS_BASE, 1);
 
   success = load (file_name, &if_.eip, espTemp);
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
-  if (!success){ 
+  if (!success){
     //changed here
 
     thread_exit ();
@@ -150,11 +188,11 @@ start_process (void *file_name_)
   }
 
   /* Start the user process by simulating a return from an
-     interrupt, implemented by intr_exit (in
-     threads/intr-stubs.S).  Because intr_exit takes all of its
-     arguments on the stack in the form of a `struct intr_frame',
-     we just point the stack pointer (%esp) to our stack frame
-     and jump to it. */
+interrupt, implemented by intr_exit (in
+threads/intr-stubs.S). Because intr_exit takes all of its
+arguments on the stack in the form of a `struct intr_frame',
+we just point the stack pointer (%esp) to our stack frame
+and jump to it. */
   asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
   NOT_REACHED ();
 }
@@ -171,6 +209,7 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
+  printf("tid we're looking for is %d\n", child_tid);
 
   //cases to take care of:
   //if it was not a child of the calling process
@@ -182,16 +221,23 @@ process_wait (tid_t child_tid UNUSED)
   struct list_elem *e;
   struct thread *chosenOne = NULL;
   struct list all_list = *get_all_list();
-
+  if (list_empty(&all_list))
+  {
+    return -1;
+  }
   for (e = list_begin (&all_list); e != list_end (&all_list);
        e = list_next (e))
     {
       struct thread *t = list_entry (e, struct thread, allelem);
+      printf("tid of thread is %d\n", t->tid);
       if(t->tid == child_tid){
+        printf("we found the chosen one\n");
         chosenOne = t;
+        
       }
     }
 
+    printf("exiting the for loop\n");
   //before bothering to wait, check if tid is INVALID
   if(chosenOne == NULL){
     return -1;
