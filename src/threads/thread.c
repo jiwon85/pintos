@@ -546,6 +546,11 @@ thread_schedule_tail (struct thread *prev)
     }
 }
 
+//return all_list
+static struct list *get_all_list(){
+  return &all_list;
+}
+
 /* Schedules a new process.  At entry, interrupts must be off and
    the running process's state must have been changed from
    running to some other state.  This function finds another

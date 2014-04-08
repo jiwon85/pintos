@@ -175,18 +175,19 @@ process_wait (tid_t child_tid UNUSED)
   //cases to take care of:
   //if it was not a child of the calling process
 
-  if(UNUSED == TID_ERROR){
+  if(child_tid == TID_ERROR){
     return -1;
   }
 
   struct list_elem *e;
   struct thread *chosenOne = NULL;
+  struct list all_list = *get_all_list();
 
   for (e = list_begin (&all_list); e != list_end (&all_list);
        e = list_next (e))
     {
       struct thread *t = list_entry (e, struct thread, allelem);
-      if(*t->tid == child_tid UNUSED){
+      if(*t->tid == child_tid){
         chosenOne = t;
       }
     }
