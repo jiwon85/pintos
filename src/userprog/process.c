@@ -171,7 +171,44 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  while(1){}
+
+  //cases to take care of:
+  //if it was not a child of the calling process
+
+  if(UNUSED == TID_ERROR){
+    return -1;
+  }
+
+  struct list_elem *e;
+  struct thread *chosenOne = NULL;
+
+  for (e = list_begin (&all_list); e != list_end (&all_list);
+       e = list_next (e))
+    {
+      struct thread *t = list_entry (e, struct thread, allelem);
+      if(*t->tid == child_tid UNUSED){
+        chosenOne = t;
+      }
+    }
+
+  //before bothering to wait, check if tid is INVALID
+  if(chosenOne == NULL){
+    return -1;
+  }
+
+  //only proceed if calledWait is 0
+  if(*chosenOne->calledWait == 0){
+      //wait for thread to die
+      while(*chosenOne->status != THREAD_DYING){}
+
+      //check if it's kernel thread
+      if(*chosenOne->isFromKernel == 1){
+        return -1;
+      }
+      *chosenOne->calledWait = 1;
+      return 0;
+  }
+  //done waiting thread
   return -1;
 }
 
