@@ -221,11 +221,31 @@ process_wait (tid_t child_tid UNUSED)
   struct list_elem *e;
   struct thread *chosenOne = NULL;
   struct list all_list = *get_all_list();
+  struct thread *t;  
+  bool found = false; 
   if (list_empty(&all_list))
   {
     return -1;
   }
-  for (e = list_begin (&all_list); e != list_end (&all_list);
+
+  //printf("list size: %d\n",list_size(&all_list)); 
+  printf("last thread id: %d\n",list_entry(list_end(&all_list)->prev,struct thread, allelem)->tid); 
+
+  e = list_begin(&all_list); 
+  while(!found && (e!=list_end(&all_list)->prev)) {
+    t = list_entry(e, struct thread, allelem); 
+    printf("@t->id %d \n",t->tid); 
+    if(t->tid==child_tid) {
+      found = true; 
+      chosenOne = t; 
+    }
+    e = list_next(e); 
+  }
+
+  if(found) printf("Found thread!\n"); 
+  else printf("Thread not found.\n"); 
+
+  /*for (e = list_begin (&all_list); e != list_end (&all_list);
        e = list_next (e))
     {
       struct thread *t = list_entry (e, struct thread, allelem);
@@ -235,9 +255,9 @@ process_wait (tid_t child_tid UNUSED)
         chosenOne = t;
         
       }
-    }
+    }*/
 
-    printf("exiting the for loop\n");
+    printf("exiting the while loop\n");
   //before bothering to wait, check if tid is INVALID
   if(chosenOne == NULL){
     return -1;
