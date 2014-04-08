@@ -187,7 +187,7 @@ process_wait (tid_t child_tid UNUSED)
        e = list_next (e))
     {
       struct thread *t = list_entry (e, struct thread, allelem);
-      if(*t->tid == child_tid){
+      if(t->tid == child_tid){
         chosenOne = t;
       }
     }
@@ -198,15 +198,15 @@ process_wait (tid_t child_tid UNUSED)
   }
 
   //only proceed if calledWait is 0
-  if(*chosenOne->calledWait == 0){
+  if(chosenOne->calledWait == 0){
       //wait for thread to die
-      while(*chosenOne->status != THREAD_DYING){}
+      while(chosenOne->status != THREAD_DYING){}
 
       //check if it's kernel thread
-      if(*chosenOne->isFromKernel == 1){
+      if(chosenOne->isFromKernel == 1){
         return -1;
       }
-      *chosenOne->calledWait = 1;
+      chosenOne->calledWait = 1;
       return 0;
   }
   //done waiting thread

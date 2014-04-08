@@ -183,6 +183,8 @@ thread_create (const char *name, int priority,
   /* Initialize thread. */
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
+  t->isFromKernel = 0;
+  t->calledWait = 0;
 
   /* Prepare thread for first run by initializing its stack.
      Do this atomically so intermediate values for the 'stack' 
@@ -547,7 +549,7 @@ thread_schedule_tail (struct thread *prev)
 }
 
 //return all_list
-static struct list *get_all_list(){
+struct list *get_all_list(){
   return &all_list;
 }
 

@@ -91,7 +91,7 @@ kill (struct intr_frame *f)
       intr_dump_frame (f);
       printf("%s: exit(%d)\n", thread_name (), -1);
       //is being killed by kernel
-      *thread_current() -> isFromKernel = 1;
+      thread_current()->isFromKernel = 1;
       thread_exit (); 
 
     case SEL_KCSEG:
@@ -109,7 +109,7 @@ kill (struct intr_frame *f)
              f->vec_no, intr_name (f->vec_no), f->cs);
       printf("%s: exit(%d)\n", thread_name (), -1);
       //is being killed by kernel
-      *thread_current() -> isFromKernel = 1;
+      thread_current()->isFromKernel = 1;
       thread_exit ();
     }
 }
