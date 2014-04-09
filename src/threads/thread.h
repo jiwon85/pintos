@@ -97,6 +97,12 @@ struct thread
     struct list_elem elem;              /* List element. */
     int isFromKernel;                   //killed by terminal
     int calledWait;                     //called process_wait function
+    int isDead;                         //thread has been killed
+
+    tid_t children[100];          //list of array of children pointers
+    int numChildren;
+
+
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */

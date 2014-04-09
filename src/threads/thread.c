@@ -185,6 +185,11 @@ thread_create (const char *name, int priority,
   tid = t->tid = allocate_tid ();
   t->isFromKernel = 0;
   t->calledWait = 0;
+  t->isDead = 0;
+  t->numChildren = 0;
+
+  //t->children = (struct thread**) malloc(100*(sizeof(struct thread**)));
+
 
   /* Prepare thread for first run by initializing its stack.
      Do this atomically so intermediate values for the 'stack' 
@@ -294,6 +299,7 @@ thread_exit (void)
   ASSERT (!intr_context ());
 
 #ifdef USERPROG
+  thread_current()->isDead = 1;
   process_exit ();
 #endif
 

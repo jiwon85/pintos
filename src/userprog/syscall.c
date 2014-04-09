@@ -29,7 +29,9 @@ bool create(const char *file, unsigned initial_size){
 
 //open system call
 int open(const char *file){
+	printf("we're about to open the file\n");
 	struct file * fileObj = filesys_open(*file); 
+	printf("we're about to return from open bitches\n");
 	return -1; //if failed
 }
 

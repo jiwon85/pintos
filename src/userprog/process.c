@@ -1,10 +1,12 @@
-                      #include "userprog/process.h"
+#include "userprog/process.h"
 #include <debug.h>
 #include <inttypes.h>
 #include <round.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <types.h>
+#include <unistd.h>
 #include "userprog/gdt.h"
 #include "userprog/pagedir.h"
 #include "userprog/tss.h"
@@ -20,6 +22,9 @@
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
+
+int counter;
+char ** buffer;
 
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
@@ -41,7 +46,10 @@ process_execute (const char *file_name)
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
-    palloc_free_page (fn_copy); 
+    palloc_free_page (fn_copy);
+  struct thread * current = thread_current(); 
+  current->children[current->numChildren] = tid;
+  current->numChildren++;
   return tid;
 }
 
@@ -63,13 +71,13 @@ start_process (void *file_name_)
   const char * file_name;
   //parse here 
 
-  char ** buffer = malloc (sizeof(char *) *10); //buffer for parsed arguments
+  buffer = malloc (sizeof(char *) *10); //buffer for parsed arguments
   int size = 10;
 
-  void * espTemp = &if_.esp;
+  //void * espTemp = &if_.esp;
 
   char *token, *save_ptr;
-  int counter = 0;
+  counter = 0;
   for (token = strtok_r (command_line, " ", &save_ptr); token != NULL;
         token = strtok_r (NULL, " ", &save_ptr)){
       if(counter == size){
@@ -82,87 +90,8 @@ start_process (void *file_name_)
   file_name = buffer[0];
   printf("This is the filename: %s\n", file_name);
   
-  const char ** addrArray = malloc (sizeof(char*) * counter); //creates address to hold array of address of strings;
-   int i;
-   for(i = counter-1; i>=0; i--){
-    printf("top of for loop index %d\n", i);
-     const char * tempStr = buffer[i];
-   
-     // int charBufferSize = 10;
-     // char * charBuffer = malloc (sizeof(char) * charBufferSize );
-     char tempChar;
-     int bufferCounter = 0;
-     //do{
-     // // saving the characters from command line
-     while((tempChar = *tempStr++) != '\0'){
-       // if(bufferCounter == charBufferSize){
-       //   charBufferSize *= 2;
-       //   charBuffer = realloc (charBuffer, sizeof(char) * charBufferSize);
-       // }
-       // charBuffer[bufferCounter] = tempChar;
-       bufferCounter++;
-     //   printf("%c.\n",tempChar);
-       //if(bufferCounter>1) *tempStr++;
-     } //while((tempChar = *tempStr) != '\0');
-     //charBuffer[bufferCounter] = '\0';
-
-     espTemp-=bufferCounter;
-     const char * tempStrPtr = (const char *) espTemp;
-     strlcpy(buffer[i], tempStrPtr, bufferCounter+1);
 
 
-     // espTemp--;
-     // printf("%08x\n", espTemp);
-     // char * tempPtr = (char *) espTemp;
-     // *tempPtr = '\0';
-    
-    //memcpy(espTemp, "\0", 1);
-     // adding characters from command line in reverse order
-     // int j;
-     // for(j = bufferCounter - 1; j >= 0; j--){
-     //   espTemp--;
-     //   tempPtr = (char *) espTemp;
-     //   *tempPtr = charBuffer[j];
-     //   //memcpy(espTemp, charBuffer[j], 1);
-     //   printf("%08x\n", espTemp);
-     //   printf("%c.\n",charBuffer[j]);
-     // }
-
-
-     addrArray[i] = espTemp;
-     printf("saving this %08x\n", espTemp);
-   }
-
-
-   //temporary int ptr
-
-   //null pointer sentilnel
-   espTemp--;
-   int * tempIntPtr = (int *) espTemp;
-   *tempIntPtr = 0;
-
-   //memcpy(espTemp, &zero, 4);
-   espTemp-=4;
-   tempIntPtr = (int *) espTemp;
-   *tempIntPtr = 0;
-   //memcpy(espTemp, &zero, 4);
-   int k;
-   for(k = counter-1; k>=0; k--){
-     espTemp-=4;
-     char * tempPtr = (char *) espTemp;
-     *tempPtr = addrArray[k];
-     //memcpy(espTemp, addrArray[k], 4);
-   }
-   espTemp-= 4;
-   //int four = 4;
-   tempIntPtr = (int *) espTemp;
-   *tempIntPtr = counter;
-   //memcpy(espTemp, &four, 4);
-   espTemp-= 4;
-   tempIntPtr = (int *) espTemp;
-   *tempIntPtr = 0;
-   //memcpy(espTemp, &zero, 4);
-    
 
  
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
@@ -173,10 +102,10 @@ start_process (void *file_name_)
   uintptr_t dump_ofs;
   const void *dump_buf;
   size_t dump_size = 1024;
-  hex_dump(dump_ofs, dump_buf, dump_size, 1);
+  //hex_dump(espTemp, espTemp, 100, 1);
   //hex_dump(espTemp, ofs, PHYS_BASE, 1);
 
-  success = load (file_name, &if_.eip, espTemp);
+  success = load (file_name, &if_.eip, &if_.esp);
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
@@ -214,9 +143,7 @@ process_wait (tid_t child_tid UNUSED)
   //cases to take care of:
   //if it was not a child of the calling process
 
-  if(child_tid == TID_ERROR){
-    return -1;
-  }
+  
 
   struct list_elem *e;
   struct thread *chosenOne = NULL;
@@ -227,14 +154,23 @@ process_wait (tid_t child_tid UNUSED)
   {
     return -1;
   }
-
+  struct thread * current = thread_current();
+  int i;
+  int childFound = 0; 
+  for(i=0; i<current->numChildren; i++){
+    if(current->children[i] == child_tid)
+      childFound = 1;
+  }
+  if(!childFound)
+    return -1;
   //printf("list size: %d\n",list_size(&all_list)); 
   printf("last thread id: %d\n",list_entry(list_end(&all_list)->prev,struct thread, allelem)->tid); 
 
   e = list_begin(&all_list); 
-  while(!found && (e!=list_end(&all_list)->prev)) {
+  while(!found && (e!=list_end(&all_list))) {
     t = list_entry(e, struct thread, allelem); 
     printf("@t->id %d \n",t->tid); 
+    printf("The name of the thread: %s\n",t->name);
     if(t->tid==child_tid) {
       found = true; 
       chosenOne = t; 
@@ -259,14 +195,16 @@ process_wait (tid_t child_tid UNUSED)
 
     printf("exiting the while loop\n");
   //before bothering to wait, check if tid is INVALID
-  if(chosenOne == NULL){
+  if(chosenOne == NULL ){
     return -1;
   }
 
   //only proceed if calledWait is 0
   if(chosenOne->calledWait == 0){
       //wait for thread to die
-      while(chosenOne->status != THREAD_DYING){}
+      while(chosenOne->isDead != 1){
+        //printf("I'm waiting\n");
+      }
 
       //check if it's kernel thread
       if(chosenOne->isFromKernel == 1){
@@ -502,6 +440,8 @@ load (const char *file_name, void (**eip) (void), void **esp)
  done:
   /* We arrive here whether the load is successful or not. */
   file_close (file);
+  if(success)
+    printf("SUCCESSFULLLLL\n");
   return success;
 }
 
@@ -625,8 +565,127 @@ setup_stack (void **esp)
   if (kpage != NULL) 
     {
       success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
-      if (success)
+      if (success){
         *esp = PHYS_BASE;
+
+
+        //ours **************************
+        void * espTemp = *esp;
+
+
+
+    char * addrArray[counter]; //creates address to hold array of address of strings;
+   int i;
+   for(i = counter-1; i>=0; i--){
+    printf("top of for loop index %d\n", i);
+     const char * tempStr = buffer[i];
+   
+    // int charBufferSize = 10;
+    // char * charBuffer = malloc (sizeof(char) * charBufferSize );
+     char tempChar;
+     int bufferCounter = 1;
+
+    
+     while((tempChar = *tempStr++) != '\0'){
+       // if(bufferCounter == charBufferSize){
+       //   charBufferSize *= 2;
+       //   charBuffer = realloc (charBuffer, sizeof(char) * charBufferSize);
+       // }
+       // charBuffer[bufferCounter] = tempChar;
+       bufferCounter++;
+       //printf("%c.\n",tempChar);
+       
+     } 
+
+     //espTemp--;
+     espTemp-=bufferCounter;
+     printf("%08x\n", espTemp);
+     char * tempPtr = (char *) espTemp;
+     //*tempPtr = '\0';
+     memcpy(tempPtr, buffer[i], bufferCounter);
+    
+    //memcpy(espTemp, "\0", 1);
+     // adding characters from command line in reverse order
+     // int j;
+     // for(j = bufferCounter - 1; j >= 0; j--){
+     //   espTemp--;
+     //   tempPtr = (char *) espTemp;
+     //   *tempPtr = charBuffer[j];
+     //   //memcpy(espTemp, charBuffer[j], 1);
+     //   printf("%08x\n", espTemp);
+     //   printf("%c.\n",charBuffer[j]);
+     // }
+     addrArray[i] = espTemp;
+     printf("saving this %08x\n", espTemp);
+   }
+
+
+   //temporary int ptr
+
+   //null pointer sentilnel
+   espTemp--;
+   printf("saving this uint8_t %08x\n", espTemp);
+   uint8_t * tempIntPtr = (uint8_t *) espTemp;
+   uint8_t nullPtr = 0;
+   memcpy(tempIntPtr, &nullPtr, 1);
+   printf("saving this %02x\n into %08x\n", nullPtr, espTemp);
+
+   
+   espTemp-=4;
+   printf("saving this last arg %08x\n", espTemp);
+   char * tempPtr = (char *) espTemp;
+   char * lastArg = 0;
+   memcpy(tempPtr, &lastArg, 4);
+   printf("saving this %08x\n into %08x\n", lastArg, espTemp);
+   
+   
+   char * argvSaved;
+
+   int k;
+   for(k = counter-1; k>=0; k--){
+     espTemp-=4;
+     printf("saving this arg[%d] %08x\n", k, espTemp);
+     tempPtr = (char *) espTemp;
+     // *tempPtr = addrArray[k];
+     memcpy(tempPtr, &addrArray[k], 4);
+     printf("saving this %08x\n into %08x\n", addrArray[k], espTemp);
+     if(counter == 0){
+      //save this, it's argv
+      argvSaved = (char*) addrArray[k];
+      printf("saving ARGV HERE : %08x\n", addrArray[k]);
+     }
+     //memcpy(espTemp, addrArray[k], 4);
+   }
+
+   espTemp-= 4;
+   printf("saving this argv %08x\n", espTemp);
+   char ** argv = (char **) espTemp;
+   //*argv = tempPtr;
+   memcpy(espTemp, &argvSaved, 4);
+   printf("saving this %08x\n into %08x\n", argvSaved, espTemp);
+
+   espTemp-=4;
+   
+   tempIntPtr = (int *) espTemp;
+   int argc = counter;
+   //*tempIntPtr = counter;
+   memcpy(tempIntPtr, &argc, 4);
+   printf("saving this %08x\n into %08x\n", argc, espTemp);
+   
+   espTemp-= 4;
+   
+   int returnAdd = 0;
+   memcpy(espTemp, &returnAdd, 4);
+   printf("saving this %08x\n into %08x\n", returnAdd, espTemp);
+   
+
+
+      esp = espTemp;
+
+  hex_dump(espTemp, espTemp, 1000, 1);
+        //*****************************
+
+      }
       else
         palloc_free_page (kpage);
     }
