@@ -111,7 +111,7 @@ start_process (void *file_name_)
   palloc_free_page (file_name);
   if (!success){
     //changed here
-
+    thread_current()->exitStatus = 0;
     thread_exit ();
 
   }
@@ -142,9 +142,6 @@ process_wait (tid_t child_tid UNUSED)
 
   //cases to take care of:
   //if it was not a child of the calling process
-
-  
-
   struct list_elem *e;
   struct thread *chosenOne = NULL;
   struct list all_list = *get_all_list();
@@ -222,7 +219,7 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
-  printf("%s: exit(%d)\n", cur->name, 0);
+  printf("%s: exit(%d)\n", cur->name, cur->exitStatus);
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;

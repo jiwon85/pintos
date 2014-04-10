@@ -187,6 +187,7 @@ thread_create (const char *name, int priority,
   t->calledWait = 0;
   t->isDead = 0;
   t->numChildren = 0;
+  t->exitStatus = 0;
 
   //t->children = (struct thread**) malloc(100*(sizeof(struct thread**)));
 
@@ -448,6 +449,7 @@ kernel_thread (thread_func *function, void *aux)
 
   intr_enable ();       /* The scheduler runs with interrupts off. */
   function (aux);       /* Execute the thread function. */
+  thread_current()->:exitStatus = 0;
   thread_exit ();       /* If function() returns, kill the thread. */
 }
 

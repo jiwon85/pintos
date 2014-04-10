@@ -92,6 +92,7 @@ kill (struct intr_frame *f)
       printf("%s: exit(%d)\n", thread_name (), -1);
       //is being killed by kernel
       thread_current()->isFromKernel = 1;
+      thread_current()->exitStatus = -1;
       thread_exit (); 
 
     case SEL_KCSEG:
@@ -107,8 +108,9 @@ kill (struct intr_frame *f)
          kernel. */
       printf ("Interrupt %#04x (%s) in unknown segment %04x\n",
              f->vec_no, intr_name (f->vec_no), f->cs);
-      printf("%s: exit(%d)\n", thread_name (), -1);
+      //printf("%s: exit(%d)\n", thread_name (), -1);
       //is being killed by kernel
+      thread_current()->exitStatus = -1;
       thread_current()->isFromKernel = 1;
       thread_exit ();
     }

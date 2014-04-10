@@ -8,6 +8,11 @@
 
 
 static void syscall_handler (struct intr_frame *);
+bool create(const char *file, unsigned initial_size);
+int open(const char *file);
+int write (int fd, const void *buffer, unsigned size);
+int wait (pid_t pid);
+
 
 void
 syscall_init (void) 
@@ -39,7 +44,28 @@ int write (int fd, const void *buffer, unsigned size){
 	return -1;
 }
 
-
+//only if the calling process received pid as a return value from a successful call to exec. 
 int wait (pid_t pid) {
+	//direct child of calling process
+	struct thread * current = thread_current();
+  	int i;
+  	int childFound = 0; 
+  	for(i=0; i<current->numChildren; i++){
+    	if(current->children[i] == child_tid)
+      	childFound = 1;
+  	}
+  	if(!childFound){
+    	return -1;
+    }
 
+    if(current->calledWait){
+    	return -1;
+    }
+
+    //wait for all children to DIE
+    struct thread *threadPtr = getChild(current->children[i]);
+    if(threadPtr != NULL){
+    	while(!threadPtr->isDead){} //wait for it to die
+    }
+    return threadPtr->exitStatus;
 }

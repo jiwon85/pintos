@@ -98,6 +98,7 @@ struct thread
     int isFromKernel;                   //killed by terminal
     int calledWait;                     //called process_wait function
     int isDead;                         //thread has been killed
+    int exitStatus;                      
 
     tid_t children[100];          //list of array of children pointers
     int numChildren;
