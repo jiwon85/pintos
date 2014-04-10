@@ -7,6 +7,7 @@
 #include "filesys/filesys.h"
 
 
+
 static void syscall_handler (struct intr_frame *);
 bool create(const char *file, unsigned initial_size);
 int open(const char *file);
@@ -45,14 +46,18 @@ int write (int fd, const void *buffer, unsigned size){
 }
 
 //only if the calling process received pid as a return value from a successful call to exec. 
+
 int wait (pid_t pid) {
+	printf("hello we are in wait thank you\n");
+  
 	//direct child of calling process
 	struct thread * current = thread_current();
   	int i;
   	int childFound = 0; 
-  	for(i=0; i<current->numChildren; i++){
-    	if(current->children[i] == child_tid)
-      	childFound = 1;
+  	for(i=0; i< current->numChildren; i++){
+    	if(current->children[i] == pid){
+      		childFound = 1;
+      	}
   	}
   	if(!childFound){
     	return -1;
@@ -62,10 +67,14 @@ int wait (pid_t pid) {
     	return -1;
     }
 
-    //wait for all children to DIE
-    struct thread *threadPtr = getChild(current->children[i]);
+    //wait for child to DIE
+    struct thread *threadPtr = getChild(pid);
     if(threadPtr != NULL){
-    	while(!threadPtr->isDead){} //wait for it to die
+    	while(threadPtr->isDead == 0){} //wait for it to die
     }
+	else{
+		return -1;
+	}
+
     return threadPtr->exitStatus;
 }

@@ -15,6 +15,8 @@
 #include "userprog/process.h"
 #endif
 
+
+typedef int pid_t;
 /* Random value for struct thread's `magic' member.
    Used to detect stack overflow.  See the big comment at the top
    of thread.h for details. */
@@ -311,11 +313,22 @@ thread_exit (void)
   intr_disable ();
 
   list_remove (&thread_current()->allelem);
-  thread_current()->isDead = 1;
+  
+
+  printf("hi\n");
+  printf("status is: %d\n", thread_current()->status);
+
+  struct thread * temp = thread_current();
   thread_current ()->status = THREAD_DYING;
 
+
+  //this print statement below fucks it up, don't do it
+  //printf("hi\n");
+
+  temp->isDead = 1;
   
   schedule ();
+  
 
 
 
@@ -449,7 +462,7 @@ kernel_thread (thread_func *function, void *aux)
 
   intr_enable ();       /* The scheduler runs with interrupts off. */
   function (aux);       /* Execute the thread function. */
-  thread_current()->:exitStatus = 0;
+  thread_current()->exitStatus = 0;
   thread_exit ();       /* If function() returns, kill the thread. */
 }
 
@@ -571,13 +584,13 @@ struct list *get_all_list(){
 }
 
 //return thread of given pid
-struct thread* getChild(tid_t tid){
+struct thread* getChild(pid_t pid){
   struct list_elem *e;
   for (e = list_begin (&all_list); e != list_end (&all_list);
        e = list_next (e))
     {
       struct thread *t = list_entry (e, struct thread, allelem);
-      if(t->tid == tid){
+      if(t->tid == pid){
         return t;
       }
     }
@@ -601,6 +614,7 @@ schedule (void)
   ASSERT (intr_get_level () == INTR_OFF);
   ASSERT (cur->status != THREAD_RUNNING);
   ASSERT (is_thread (next));
+
 
 
 

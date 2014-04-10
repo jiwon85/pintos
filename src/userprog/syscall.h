@@ -1,5 +1,8 @@
 #ifndef USERPROG_SYSCALL_H
 #define USERPROG_SYSCALL_H
+#include <stdbool.h>
+
+typedef int pid_t;
 
 void syscall_init (void);
 bool create(const char *file, unsigned initial_size);

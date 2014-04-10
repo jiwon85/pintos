@@ -147,21 +147,23 @@ process_wait (tid_t child_tid UNUSED)
   struct list all_list = *get_all_list();
   struct thread *t;  
   bool found = false; 
-  if (list_empty(&all_list))
-  {
-    return -1;
-  }
+  // if (list_empty(&all_list))
+  // {
+  //   return -1;
+  // }
   struct thread * current = thread_current();
   int i;
   int childFound = 0; 
   for(i=0; i<current->numChildren; i++){
-    if(current->children[i] == child_tid)
+    if(current->children[i] == child_tid){
       childFound = 1;
+    }
   }
-  if(!childFound)
+  if(!childFound){
     return -1;
+  }
   //printf("list size: %d\n",list_size(&all_list)); 
-  printf("last thread id: %d\n",list_entry(list_end(&all_list)->prev,struct thread, allelem)->tid); 
+  //printf("last thread id: %d\n",list_entry(list_end(&all_list)->prev,struct thread, allelem)->tid); 
 
   e = list_begin(&all_list); 
   while(!found && (e!=list_end(&all_list))) {
@@ -199,8 +201,7 @@ process_wait (tid_t child_tid UNUSED)
   //only proceed if calledWait is 0
   if(chosenOne->calledWait == 0){
       //wait for thread to die
-      while(chosenOne->isDead != 1){
-      }
+      while(chosenOne->isDead != 1){}
 
       //check if it's kernel thread
       if(chosenOne->isFromKernel == 1){
