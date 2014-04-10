@@ -203,7 +203,6 @@ process_wait (tid_t child_tid UNUSED)
   if(chosenOne->calledWait == 0){
       //wait for thread to die
       while(chosenOne->isDead != 1){
-        //printf("I'm waiting\n");
       }
 
       //check if it's kernel thread
@@ -350,6 +349,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   /* Open executable file. */
   file = filesys_open (file_name);
+
   if (file == NULL) 
     {
       printf ("load: %s: open failed\n", file_name);
@@ -399,6 +399,8 @@ load (const char *file_name, void (**eip) (void), void **esp)
           if (validate_segment (&phdr, file)) 
             {
               bool writable = (phdr.p_flags & PF_W) != 0;
+
+              if(writable) printf("writable is TRUE!!!!!!!!!!!!!!!!!!\n");
               uint32_t file_page = phdr.p_offset & ~PGMASK;
               uint32_t mem_page = phdr.p_vaddr & ~PGMASK;
               uint32_t page_offset = phdr.p_vaddr & PGMASK;
@@ -516,7 +518,12 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
   ASSERT (pg_ofs (upage) == 0);
   ASSERT (ofs % PGSIZE == 0);
 
+
+
+
   file_seek (file, ofs);
+
+
   while (read_bytes > 0 || zero_bytes > 0) 
     {
       /* Calculate how to fill this page.
@@ -616,20 +623,25 @@ setup_stack (void **esp)
      //   printf("%c.\n",charBuffer[j]);
      // }
      addrArray[i] = espTemp;
-     printf("saving this %08x\n", espTemp);
+     printf("saving this %08x for index %d\n", espTemp, i);
    }
 
 
    //temporary int ptr
-
+   uint8_t * tempIntPtr; 
+   int tempInt = espTemp;
    //null pointer sentilnel
-   espTemp--;
-   printf("saving this uint8_t %08x\n", espTemp);
-   uint8_t * tempIntPtr = (uint8_t *) espTemp;
-   uint8_t nullPtr = 0;
-   memcpy(tempIntPtr, &nullPtr, 1);
-   printf("saving this %02x\n into %08x\n", nullPtr, espTemp);
+   while(tempInt%4==0){
+     tempInt--;
+     printf("saving this uint8_t %08x\n", espTemp);
+     tempIntPtr = (uint8_t *) tempInt;
+     uint8_t nullPtr = 0;
+     memcpy(tempIntPtr, &nullPtr, 1);
+     printf("saving this %02x\n into %08x\n", nullPtr, tempInt);
 
+  }
+
+  espTemp = tempInt;
    
    espTemp-=4;
    printf("saving this last arg %08x\n", espTemp);
@@ -649,19 +661,20 @@ setup_stack (void **esp)
      // *tempPtr = addrArray[k];
      memcpy(tempPtr, &addrArray[k], 4);
      printf("saving this %08x\n into %08x\n", addrArray[k], espTemp);
-     if(counter == 0){
+     if(k == 0){
       //save this, it's argv
-      argvSaved = (char*) addrArray[k];
-      printf("saving ARGV HERE : %08x\n", addrArray[k]);
+      argvSaved = tempPtr;
+      printf("saving ARGV HERE : %08x\n", tempPtr);
      }
      //memcpy(espTemp, addrArray[k], 4);
    }
 
    espTemp-= 4;
-   printf("saving this argv %08x\n", espTemp);
-   char ** argv = (char **) espTemp;
+   //printf("saving this argv %08x\n", espTemp);
+   //char ** argv = (char **) espTemp;
    //*argv = tempPtr;
-   memcpy(espTemp, &argvSaved, 4);
+   int argPtr = argvSaved;
+   memcpy(espTemp, &argPtr, 4);
    printf("saving this %08x\n into %08x\n", argvSaved, espTemp);
 
    espTemp-=4;
@@ -680,9 +693,11 @@ setup_stack (void **esp)
    
 
 
-      esp = espTemp;
+      *esp = espTemp;
 
-  hex_dump(espTemp, espTemp, 1000, 1);
+ 
+
+  hex_dump(*esp, *esp, 1000, 1);
         //*****************************
 
       }
