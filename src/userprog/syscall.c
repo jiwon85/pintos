@@ -35,3 +35,11 @@ int open(const char *file){
 	return -1; //if failed
 }
 
+int write (int fd, const void *buffer, unsigned size){
+	return -1;
+}
+
+
+int wait (pid_t pid) {
+
+}

@@ -150,5 +150,6 @@ int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
 struct list *get_all_list();
+struct thread* getChild(tid_t tid);
 
 #endif /* threads/thread.h */

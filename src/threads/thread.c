@@ -299,18 +299,27 @@ thread_exit (void)
   ASSERT (!intr_context ());
 
 #ifdef USERPROG
-  thread_current()->isDead = 1;
+  
   process_exit ();
+	printf("exited the userprog\n");
 #endif
 
   /* Remove thread from all threads list, set our status to dying,
      and schedule another process.  That process will destroy us
      when it calls thread_schedule_tail(). */
   intr_disable ();
+
   list_remove (&thread_current()->allelem);
+  thread_current()->isDead = 1;
   thread_current ()->status = THREAD_DYING;
+
+  
   schedule ();
+
+
+
   NOT_REACHED ();
+  
 }
 
 /* Yields the CPU.  The current thread is not put to sleep and
@@ -559,6 +568,20 @@ struct list *get_all_list(){
   return &all_list;
 }
 
+//return thread of given pid
+struct thread* getChild(tid_t tid){
+  struct list_elem *e;
+  for (e = list_begin (&all_list); e != list_end (&all_list);
+       e = list_next (e))
+    {
+      struct thread *t = list_entry (e, struct thread, allelem);
+      if(t->tid == tid){
+        return t;
+      }
+    }
+    return NULL;
+}
+
 /* Schedules a new process.  At entry, interrupts must be off and
    the running process's state must have been changed from
    running to some other state.  This function finds another
@@ -576,6 +599,8 @@ schedule (void)
   ASSERT (intr_get_level () == INTR_OFF);
   ASSERT (cur->status != THREAD_RUNNING);
   ASSERT (is_thread (next));
+
+
 
   if (cur != next)
     prev = switch_threads (cur, next);
