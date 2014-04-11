@@ -105,7 +105,10 @@ start_process (void *file_name_)
   //hex_dump(espTemp, espTemp, 100, 1);
   //hex_dump(espTemp, ofs, PHYS_BASE, 1);
 
+
+  //printf("cp list size %d\n",list_size(&thread_current()->load_sema->waiters)); 
   success = load (file_name, &if_.eip, &if_.esp);
+  sema_up(&thread_current()->load_sema); 
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
@@ -159,9 +162,9 @@ process_wait (tid_t child_tid UNUSED)
       childFound = 1;
     }
   }
-  if(!childFound){
-    return -1;
-  }
+
+
+
   //printf("list size: %d\n",list_size(&all_list)); 
   //printf("last thread id: %d\n",list_entry(list_end(&all_list)->prev,struct thread, allelem)->tid); 
 
@@ -201,7 +204,8 @@ process_wait (tid_t child_tid UNUSED)
   //only proceed if calledWait is 0
   if(chosenOne->calledWait == 0){
       //wait for thread to die
-      while(chosenOne->isDead != 1){
+      if (chosenOne->isDead != 1){
+        sema_down(&chosenOne->exit_sema); 
         //printf("waiting in process_wait\n");
       }
 
@@ -212,10 +216,9 @@ process_wait (tid_t child_tid UNUSED)
         return -1;
       }
       chosenOne->calledWait = 1;
-      return 0;
   }
   //done waiting thread
-  return -1;
+  return chosenOne->exitStatus;
 }
 
 /* Free the current process's resources. */
@@ -225,6 +228,16 @@ process_exit (void)
   struct thread *cur = thread_current ();
   uint32_t *pd;
   printf("%s: exit(%d)\n", cur->name, cur->exitStatus);
+
+  // struct thread *t = cur; 
+  // struct semaphore *s = t->exit_sema; 
+  // int size = list_size(&s->waiters); 
+  // printf("cp list size %d\n",list_size(&cur->exit_sema->waiters)); 
+
+  if(cur!=NULL && cur->status!=THREAD_DYING) {
+    cur->exitStatus = 1; 
+    sema_up(&cur->exit_sema); 
+  }
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;

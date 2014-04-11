@@ -190,6 +190,11 @@ thread_create (const char *name, int priority,
   t->isDead = 0;
   t->numChildren = 0;
   t->exitStatus = 0;
+  t->load_sema = (struct semaphore *) malloc(sizeof(struct semaphore *)); 
+  t->exit_sema = (struct semaphore *) malloc(sizeof(struct semaphore *)); 
+
+  sema_init(t->load_sema,0); 
+  sema_init(t->exit_sema,0); 
 
   //t->children = (struct thread**) malloc(100*(sizeof(struct thread**)));
 

@@ -103,6 +103,12 @@ struct thread
     tid_t children[100];          //list of array of children pointers
     int numChildren;
 
+    /* Properties for child/parent processes */ 
+    bool wait; 
+    bool exit; 
+    struct semaphore *load_sema; 
+    struct semaphore *exit_sema; 
+
 
 
 #ifdef USERPROG
