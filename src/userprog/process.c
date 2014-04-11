@@ -201,8 +201,8 @@ process_wait (tid_t child_tid UNUSED)
   //only proceed if calledWait is 0
   if(chosenOne->calledWait == 0){
       //wait for thread to die
-      while(chosenOne->isDead != 1){
-        //printf("waiting in process_wait\n");
+      if(chosenOne->isDead != 1){ // makes parent wait
+        sema_down(&chosenOne->exit);
       }
 
       printf("done with while loop suckaaa!\n");

@@ -73,6 +73,8 @@ static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
+struct list *get_all_list();
+
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S
@@ -191,6 +193,7 @@ thread_create (const char *name, int priority,
   t->numChildren = 0;
   t->exitStatus = 0;
 
+  sema_init(&t->exit, 0);
   //t->children = (struct thread**) malloc(100*(sizeof(struct thread**)));
 
 
@@ -213,6 +216,7 @@ thread_create (const char *name, int priority,
   sf = alloc_frame (t, sizeof *sf);
   sf->eip = switch_entry;
   sf->ebp = 0;
+
 
   intr_set_level (old_level);
 
@@ -306,33 +310,21 @@ thread_current()->isDead = 1;
   process_exit ();
 	printf("exited the userprog\n");
 #endif
-
+  sema_up(&(thread_current()->exit));
   /* Remove thread from all threads list, set our status to dying,
      and schedule another process.  That process will destroy us
      when it calls thread_schedule_tail(). */
   intr_disable ();
 
   list_remove (&thread_current()->allelem);
-  
 
- 
-
-  
   thread_current ()->status = THREAD_DYING;
-
-
   //this print statement below fucks it up, don't do it
   //printf("hi\n");
 
-  
-  
   schedule ();
   
-
-
-
   NOT_REACHED ();
-  
 }
 
 /* Yields the CPU.  The current thread is not put to sleep and
