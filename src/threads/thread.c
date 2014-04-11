@@ -300,7 +300,7 @@ void
 thread_exit (void) 
 {
   ASSERT (!intr_context ());
-
+thread_current()->isDead = 1;
 #ifdef USERPROG
   
   process_exit ();
@@ -315,17 +315,16 @@ thread_exit (void)
   list_remove (&thread_current()->allelem);
   
 
-  printf("hi\n");
-  printf("status is: %d\n", thread_current()->status);
+ 
 
-  struct thread * temp = thread_current();
+  
   thread_current ()->status = THREAD_DYING;
 
 
   //this print statement below fucks it up, don't do it
   //printf("hi\n");
 
-  temp->isDead = 1;
+  
   
   schedule ();
   

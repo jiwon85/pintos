@@ -201,7 +201,11 @@ process_wait (tid_t child_tid UNUSED)
   //only proceed if calledWait is 0
   if(chosenOne->calledWait == 0){
       //wait for thread to die
-      while(chosenOne->isDead != 1){}
+      while(chosenOne->isDead != 1){
+        //printf("waiting in process_wait\n");
+      }
+
+      printf("done with while loop suckaaa!\n");
 
       //check if it's kernel thread
       if(chosenOne->isFromKernel == 1){
