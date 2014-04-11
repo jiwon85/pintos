@@ -11,6 +11,8 @@ int open(const char *file);
 int write (int fd, const void *buffer, unsigned size);
 int wait (pid_t pid);
 int assign_fd(struct file* filePtr);
+int filesize (int fd);
+unsigned tell (int fd);
 
 
 #endif /* userprog/syscall.h */

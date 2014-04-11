@@ -61,6 +61,7 @@ int assign_fd(struct file* filePtr){
 }
 //open system call
 int open(const char *file){
+  printf("In open function\n");
 	printf("we're about to open the file\n");
 	struct file * fileObj = filesys_open(*file); 
 	printf("we're about to return from open bitches\n");
@@ -70,6 +71,7 @@ int open(const char *file){
 }
 
 int write (int fd, const void *buffer, unsigned size){
+  printf("Write function: fd value is %d\n", fd);
   if(fd < 0 || fd > fd_table_size){ //fd not correct
     return 0;
   }
@@ -120,4 +122,16 @@ int wait (pid_t pid) {
 	}
 
     return threadPtr->exitStatus;
+}
+
+//returns size of file
+int filesize (int fd) { 
+  struct file * file = fd_table[fd];
+  return file_length (file); 
+}
+
+//Returns the position of the next byte to be read or written in open file fd
+unsigned tell (int fd) {
+  struct file * file = fd_table[fd];
+  return file_tell (file);
 }
