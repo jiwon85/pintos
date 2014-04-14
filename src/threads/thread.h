@@ -90,7 +90,8 @@ struct thread
     enum thread_status status;          /* Thread state. */
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
-    int priority;           
+    int priority;
+    char thread_name[20];           
                 /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
 
@@ -104,7 +105,9 @@ struct thread
     tid_t children[100];          //list of array of children pointers
     int numChildren;
     //struct semaphore load;        //semaphore for 
-    struct semaphore exit;        //semaphore for 
+    struct semaphore exit;        //semaphore for
+    int fd_list[100];
+    int fd_index; 
 
 
 

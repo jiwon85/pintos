@@ -192,6 +192,7 @@ thread_create (const char *name, int priority,
   t->isDead = 0;
   t->numChildren = 0;
   t->exitStatus = 0;
+  t->fd_index = 0;
 
   sema_init(&t->exit, 0);
   //t->children = (struct thread**) malloc(100*(sizeof(struct thread**)));
@@ -305,10 +306,9 @@ thread_exit (void)
 {
   ASSERT (!intr_context ());
 thread_current()->isDead = 1;
-#ifdef USERPROG
+#ifdef UESRPROG
   
   process_exit ();
-	printf("exited the userprog\n");
 #endif
   sema_up(&(thread_current()->exit));
   /* Remove thread from all threads list, set our status to dying,

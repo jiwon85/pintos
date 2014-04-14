@@ -92,7 +92,7 @@ static bool
 lookup (const struct dir *dir, const char *name,
         struct dir_entry *ep, off_t *ofsp) 
 {
-  printf("I'm in lcookup\n");
+
   struct dir_entry e;
   size_t ofs;
   
@@ -120,7 +120,7 @@ bool
 dir_lookup (const struct dir *dir, const char *name,
             struct inode **inode) 
 {
-  printf("I'm in dir_lookup\n");
+
   struct dir_entry e;
 
   ASSERT (dir != NULL);
@@ -130,7 +130,7 @@ dir_lookup (const struct dir *dir, const char *name,
     *inode = inode_open (e.inode_sector);
   else{
     *inode = NULL;
-  printf("I'm returning null\n");
+
   }
 
   return *inode != NULL;

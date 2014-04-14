@@ -88,7 +88,7 @@ start_process (void *file_name_)
       counter++;
   }
   file_name = buffer[0];
-  printf("This is the filename: %s\n", file_name);
+  //printf("This is the filename: %s\n", file_name);
   
 
 
@@ -107,11 +107,14 @@ start_process (void *file_name_)
 
   success = load (file_name, &if_.eip, &if_.esp);
 
+
+
   /* If load failed, quit. */
   palloc_free_page (file_name);
   if (!success){
     //changed here
     thread_current()->exitStatus = 0;
+
     thread_exit ();
 
   }
@@ -138,7 +141,7 @@ and jump to it. */
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  printf("tid we're looking for is %d\n", child_tid);
+  //printf("tid we're looking for is %d\n", child_tid);
 
   //cases to take care of:
   //if it was not a child of the calling process
@@ -168,8 +171,8 @@ process_wait (tid_t child_tid UNUSED)
   e = list_begin(&all_list); 
   while(!found && (e!=list_end(&all_list))) {
     t = list_entry(e, struct thread, allelem); 
-    printf("@t->id %d \n",t->tid); 
-    printf("The name of the thread: %s\n",t->name);
+    //printf("@t->id %d \n",t->tid); 
+    //printf("The name of the thread: %s\n",t->name);
     if(t->tid==child_tid) {
       found = true; 
       chosenOne = t; 
@@ -177,8 +180,6 @@ process_wait (tid_t child_tid UNUSED)
     e = list_next(e); 
   }
 
-  if(found) printf("Found thread!\n"); 
-  else printf("Thread not found.\n"); 
 
   /*for (e = list_begin (&all_list); e != list_end (&all_list);
        e = list_next (e))
@@ -192,7 +193,7 @@ process_wait (tid_t child_tid UNUSED)
       }
     }*/
 
-    printf("exiting the while loop\n");
+    //printf("exiting the while loop\n");
   //before bothering to wait, check if tid is INVALID
   if(chosenOne == NULL ){
     return -1;
@@ -205,7 +206,7 @@ process_wait (tid_t child_tid UNUSED)
         sema_down(&chosenOne->exit);
       }
 
-      printf("done with while loop suckaaa!\n");
+      //printf("done with while loop suckaaa!\n");
 
       //check if it's kernel thread
       if(chosenOne->isFromKernel == 1){
@@ -223,8 +224,9 @@ void
 process_exit (void)
 {
   struct thread *cur = thread_current ();
+  clearTable(cur->fd_list, cur->fd_index);
   uint32_t *pd;
-  printf("%s: exit(%d)\n", cur->name, cur->exitStatus);
+
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;
@@ -336,8 +338,12 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
 bool
 load (const char *file_name, void (**eip) (void), void **esp) 
 {
-  printf("In load function\n");
+
+  //printf("In load function\n");
   struct thread *t = thread_current ();
+
+  strlcpy(thread_current()->thread_name, file_name, strlen(file_name)+1);
+  //printf("%s and %s\n", thread_current()->thread_name, file_name);
   struct Elf32_Ehdr ehdr;
   struct file *file = NULL;
   off_t file_ofs;
@@ -403,7 +409,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
             {
               bool writable = (phdr.p_flags & PF_W) != 0;
 
-              if(writable) printf("writable is TRUE!!!!!!!!!!!!!!!!!!\n");
+              
               uint32_t file_page = phdr.p_offset & ~PGMASK;
               uint32_t mem_page = phdr.p_vaddr & ~PGMASK;
               uint32_t page_offset = phdr.p_vaddr & PGMASK;
@@ -445,8 +451,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
  done:
   /* We arrive here whether the load is successful or not. */
   file_close (file);
-  if(success)
-    printf("SUCCESSFULLLLL\n");
+
   return success;
 }
 
@@ -587,7 +592,7 @@ setup_stack (void **esp)
     char * addrArray[counter]; //creates address to hold array of address of strings;
    int i;
    for(i = counter-1; i>=0; i--){
-    printf("top of for loop index %d\n", i);
+    //printf("top of for loop index %d\n", i);
      const char * tempStr = buffer[i];
    
     // int charBufferSize = 10;
@@ -609,7 +614,7 @@ setup_stack (void **esp)
 
      //espTemp--;
      espTemp-=bufferCounter;
-     printf("%08x\n", espTemp);
+     //printf("%08x\n", espTemp);
      char * tempPtr = (char *) espTemp;
      //*tempPtr = '\0';
      memcpy(tempPtr, buffer[i], bufferCounter);
@@ -626,7 +631,7 @@ setup_stack (void **esp)
      //   printf("%c.\n",charBuffer[j]);
      // }
      addrArray[i] = espTemp;
-     printf("saving this %08x for index %d\n", espTemp, i);
+     //printf("saving this %08x for index %d\n", espTemp, i);
    }
 
 
@@ -636,22 +641,22 @@ setup_stack (void **esp)
    //null pointer sentilnel
    while(tempInt%4==0){
      tempInt--;
-     printf("saving this uint8_t %08x\n", espTemp);
+     //printf("saving this uint8_t %08x\n", espTemp);
      tempIntPtr = (uint8_t *) tempInt;
      uint8_t nullPtr = 0;
      memcpy(tempIntPtr, &nullPtr, 1);
-     printf("saving this %02x\n into %08x\n", nullPtr, tempInt);
+     //printf("saving this %02x\n into %08x\n", nullPtr, tempInt);
 
   }
 
   espTemp = tempInt;
    
    espTemp-=4;
-   printf("saving this last arg %08x\n", espTemp);
+   //printf("saving this last arg %08x\n", espTemp);
    char * tempPtr = (char *) espTemp;
    char * lastArg = 0;
    memcpy(tempPtr, &lastArg, 4);
-   printf("saving this %08x\n into %08x\n", lastArg, espTemp);
+   //printf("saving this %08x\n into %08x\n", lastArg, espTemp);
    
    
    char * argvSaved;
@@ -659,15 +664,15 @@ setup_stack (void **esp)
    int k;
    for(k = counter-1; k>=0; k--){
      espTemp-=4;
-     printf("saving this arg[%d] %08x\n", k, espTemp);
+     //printf("saving this arg[%d] %08x\n", k, espTemp);
      tempPtr = (char *) espTemp;
      // *tempPtr = addrArray[k];
      memcpy(tempPtr, &addrArray[k], 4);
-     printf("saving this %08x\n into %08x\n", addrArray[k], espTemp);
+     //printf("saving this %08x\n into %08x\n", addrArray[k], espTemp);
      if(k == 0){
       //save this, it's argv
       argvSaved = tempPtr;
-      printf("saving ARGV HERE : %08x\n", tempPtr);
+      //printf("saving ARGV HERE : %08x\n", tempPtr);
      }
      //memcpy(espTemp, addrArray[k], 4);
    }
@@ -678,7 +683,7 @@ setup_stack (void **esp)
    //*argv = tempPtr;
    int argPtr = argvSaved;
    memcpy(espTemp, &argPtr, 4);
-   printf("saving this %08x\n into %08x\n", argvSaved, espTemp);
+   //printf("saving this %08x\n into %08x\n", argvSaved, espTemp);
 
    espTemp-=4;
    
@@ -686,13 +691,13 @@ setup_stack (void **esp)
    int argc = counter;
    //*tempIntPtr = counter;
    memcpy(tempIntPtr, &argc, 4);
-   printf("saving this %08x\n into %08x\n", argc, espTemp);
+   //printf("saving this %08x\n into %08x\n", argc, espTemp);
    
    espTemp-= 4;
    
    int returnAdd = 0;
    memcpy(espTemp, &returnAdd, 4);
-   printf("saving this %08x\n into %08x\n", returnAdd, espTemp);
+   //printf("saving this %08x\n into %08x\n", returnAdd, espTemp);
    
 
 
@@ -700,7 +705,7 @@ setup_stack (void **esp)
 
  
 
-  hex_dump(*esp, *esp, 1000, 1);
+  //hex_dump(*esp, *esp, 1000, 1);
         //*****************************
 
       }
