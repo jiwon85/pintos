@@ -40,7 +40,6 @@ void
 fail (const char *format, ...) 
 {
   va_list args;
-
   va_start (args, format);
   vmsg (format, args, ": FAILED\n");
   va_end (args);

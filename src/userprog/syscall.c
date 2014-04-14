@@ -163,10 +163,12 @@ syscall_handler (struct intr_frame *f UNUSED)
 
 //create system call
 bool create(const char *file, unsigned initial_size){
-  if(file == NULL || !strcmp("", file))
+  const char *comp = "";
+  if(file == NULL || !is_user_vaddr(ptov(file)) || is_kernel_vaddr(ptov(file)) || !strcmp(comp, file))
     exit(-1);
+  bool success = filesys_create(file, initial_size);
 
-	return filesys_create(file, initial_size);
+  return success;
 }
 
 int assign_fd(struct file* filePtr){
@@ -189,11 +191,11 @@ int assign_fd(struct file* filePtr){
 }
 //open system call
 int open(const char *file){
-  if(file == NULL || !strcmp("", file))
-    exit(0);
-	struct file * fileObj = filesys_open(*file); 
+  if(file == NULL)
+    exit(-1);
+	struct file * fileObj = filesys_open(file); 
   if(fileObj == NULL)
-    exit(0);
+    exit(1);
   int fd = assign_fd(fileObj);
   thread_current()->fd_list[thread_current()->fd_index] = fd;
   thread_current()->fd_index++;
@@ -202,7 +204,7 @@ int open(const char *file){
 
 int write (int fd, const void *buffer, unsigned size){
   //printf("Write function: fd value is %d\n", fd);
-  if(fd < 0 || fd > fd_table_size){ //fd not correct
+  if(fd < 0 || fd > fd_table_size || buffer == NULL){ //fd not correct
     return 0;
   }
   else if(fd != 1){
@@ -290,7 +292,7 @@ void close(int fd){
 }
 
 int read(int fd, const void *buffer, unsigned size){
- if(fd < 0 || fd > fd_table_size){ //fd not correct
+ if(fd < 0 || fd > fd_table_size || buffer==NULL){ //fd not correct
     exit(-1);
   }
   else if(fd != 0){
@@ -311,7 +313,7 @@ bool remove(const char * file){
 }
 
 pid_t exec(const char * cmd_line){
-  if(cmd_line == NULL || !strcmp("", cmd_line))
+  if(cmd_line == NULL || !is_user_vaddr(ptov(cmd_line)) || is_kernel_vaddr(ptov(cmd_line)) || !strcmp("", cmd_line))
     exit(-1);
   return process_execute(cmd_line);
 }
