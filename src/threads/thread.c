@@ -245,7 +245,11 @@ thread_create (const char *name, int priority,
   //end mine
 
 
-  thread_unblock (t);
+  thread_unblock (t); 
+
+  old_level = intr_disable(); 
+  check_priority(); 
+  intr_set_level(old_level);
 
 
   /* Add to run queue. */
@@ -479,7 +483,8 @@ thread_set_priority (int new_priority)
   if(old_priority < thread_current()->priority) {
     // donate priority 
   } else if(old_priority > thread_current()->priority) {
-    thread_yield(); 
+    check_priority(); 
+    //thread_yield(); 
   }
 
   intr_set_level (old_level);
@@ -506,6 +511,7 @@ thread_set_nice (int nice UNUSED)
   enum intr_level old_level = intr_disable(); 
   thread_current()->nice = nice; 
   intr_set_level(old_level); 
+  check_priority(); 
 }
 
 /* Returns the current thread's nice value. */
@@ -727,6 +733,29 @@ bool comparative(const struct list_elem *a, const struct list_elem *b, void *aux
   struct thread *aThread = list_entry(a, struct thread, elem);
   struct thread *bThread = list_entry(b, struct thread, elem);
   return aThread->priority < bThread->priority;
+}
+
+void check_priority(void) {
+  struct thread *t = list_entry(list_front(&ready_list),struct thread,elem); 
+ 
+  if(list_empty(&ready_list)) return; 
+  if(intr_context()) {
+    if(thread_current()->priority <- t->priority) {
+      intr_yield_on_return(); 
+    }
+    return; 
+  } 
+  if(thread_current()->priority < t->priority)
+    thread_yield(); 
+  // if(list_empty(&ready_list)) return; 
+  // if(thread_current()->priority <= t->priority) {
+  //   if(intr_context()) {
+  //     intr_yield_on_return(); 
+  //   } 
+  //   thread_yield(); 
+  // }
+
+  // return; 
 }
 
 /* Schedules a new process.  At entry, interrupts must be off and

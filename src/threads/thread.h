@@ -146,5 +146,6 @@ int thread_get_load_avg (void);
 struct list* get_list();
 bool comparative(const struct list_elem *a, const struct list_elem *b, void *aux);
 
+void check_priority(void); 
 
 #endif /* threads/thread.h */
