@@ -469,10 +469,17 @@ thread_set_priority (int new_priority)
 
   enum intr_level old_level = intr_disable ();
 
-  thread_current ()->priority = new_priority;
-  struct thread *max = list_entry (list_max(&ready_list, comparative, 0), struct thread, elem);
-  if(&max->priority > new_priority){
-    thread_yield();
+  // thread_current ()->priority = new_priority;
+  // struct thread *max = list_entry (list_max(&ready_list, comparative, 0), struct thread, elem);
+  // if(&max->priority > new_priority){
+  //   thread_yield();
+  // }
+  int old_priority = thread_current()->priority; 
+  thread_current()->priority = new_priority; 
+  if(old_priority < thread_current()->priority) {
+    // donate priority 
+  } else if(old_priority > thread_current()->priority) {
+    thread_yield(); 
   }
 
   intr_set_level (old_level);
@@ -484,8 +491,10 @@ int
 thread_get_priority (void) 
 {
   //printf("i'm in get pri\n");
-
-  return thread_current ()->priority;
+  enum intr_level old_level = intr_disable(); 
+  int priority = thread_current()->priority; 
+  intr_set_level(old_level); 
+  return priority;
 
 }
 
@@ -494,6 +503,9 @@ void
 thread_set_nice (int nice UNUSED) 
 {
   /* Not yet implemented. */
+  enum intr_level old_level = intr_disable(); 
+  thread_current()->nice = nice; 
+  intr_set_level(old_level); 
 }
 
 /* Returns the current thread's nice value. */
@@ -501,7 +513,10 @@ int
 thread_get_nice (void) 
 {
   /* Not yet implemented. */
-  return 0;
+  enum intr_level old_level = intr_disable(); 
+  int nice = thread_current()->nice; 
+  intr_set_level(old_level); 
+  return nice;
 }
 
 /* Returns 100 times the system load average. */

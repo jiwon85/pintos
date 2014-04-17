@@ -93,6 +93,7 @@ struct thread
     struct list_elem allelem;           /* List element for all threads list. */
     int called; 
     int64_t currentticks; //number of ticks so far to avoid busy waiting
+    int nice; 
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
