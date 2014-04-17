@@ -6,5 +6,6 @@
 void
 test_main (void) 
 {
+
   CHECK (create ("quux.dat", 0), "create quux.dat");
 }

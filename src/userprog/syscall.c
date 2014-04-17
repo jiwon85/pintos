@@ -7,10 +7,15 @@
 #include "filesys/filesys.h"
 #include "lib/syscall-nr.h"
 #include "threads/vaddr.h"
+#include "threads/synch.h"
 
 
 static struct file ** fd_table;
 int fd_table_size;
+struct lock *filesys_lock; //is this all i need?
+struct condition * cond;
+
+
 
 
 static void syscall_handler (struct intr_frame *);
@@ -36,6 +41,10 @@ syscall_init (void)
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
   fd_table_size = 100;
   fd_table = malloc(sizeof(struct file * )*fd_table_size);
+  filesys_lock = malloc(sizeof(struct lock));
+  cond = malloc(sizeof(struct condition));
+  lock_init(filesys_lock);
+  cond_init(cond);
 
 }
 
@@ -93,7 +102,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
     case SYS_EXEC:
       tempNum = *(int *) arg0;
-      exec(tempNum);
+      f->eax = exec(tempNum);
       break;
     case SYS_EXIT:
       tempNum = *(int *) arg0;
@@ -101,39 +110,42 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
     case SYS_WAIT:
       tempNum = *(int *) arg0;
-      wait(tempNum);
+      f->eax = wait(tempNum);
       break;
     case SYS_CREATE:
       tempNum = *(int *) arg0;
       tempStr = (char *) tempNum;
       tempUnsigned = *((unsigned *) arg1);
-      create(tempStr, tempUnsigned);
+      // if(!tempStr)
+      //   exit(-1);
+      //lock_acquire(filesys_lock);
+      f->eax = create(tempStr, tempUnsigned);
       break;
     case SYS_REMOVE:
       tempNum = *(int *) arg0;
       tempStr = (char *) tempNum;
-      remove(tempStr);
+      f->eax = remove(tempStr);
       break;
     case SYS_OPEN:
       tempNum = *(int *) arg0;
       tempStr = (char *) tempNum;
-      open(tempStr);
+      f->eax = open(tempStr);
       break;
     case SYS_FILESIZE:
       tempNum = *(int *) arg0;
-      filesize(tempNum);
+      f->eax = filesize(tempNum);
       break;
     case SYS_READ:
       tempNum = *(int *) arg0;
       tempUnsigned = *((unsigned *) arg2);
       tempStr = (char *) *(int *) arg1;
-      read(tempNum, tempStr, tempUnsigned);
+      f->eax = read(tempNum, tempStr, tempUnsigned);
       break;
     case SYS_WRITE:
       tempNum = *(int *) arg0;
       tempUnsigned = *((unsigned *) arg2);
       tempStr = (char *) *(int *) arg1;
-      write(tempNum, tempStr, tempUnsigned);
+      f->eax = write(tempNum, tempStr, tempUnsigned);
       break;
     case SYS_SEEK:
       tempNum = *(int *) arg0;
@@ -142,7 +154,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
     case SYS_TELL:
       tempNum = *(int *) arg0;
-      tell(tempNum);
+      f->eax = tell(tempNum);
       break;
     case SYS_CLOSE:
       tempNum = *(int *) arg0;
@@ -153,21 +165,29 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
   }
 
-                 
- 
-  //printf ("system call!\n");
-  //thread_exit ();
 
+}
 
+bool isValidPtr(void * ptr){
+  if(!ptr || !is_user_vaddr(ptr) || !pagedir_get_page(thread_current()->pagedir, (void *) ptr)){ //  || is_kernel_vaddr(ptov(file)) 
+    return false;
+  }
+  return true;
 }
 
 //create system call
 bool create(const char *file, unsigned initial_size){
-  const char *comp = "";
-  if(file == NULL || !is_user_vaddr(ptov(file)) || is_kernel_vaddr(ptov(file)) || !strcmp(comp, file))
+  //const char *temp = "";
+  //printf("%s is the file name with size %d\n", file, initial_size);
+  if(!isValidPtr((void *) file)){ //  || is_kernel_vaddr(ptov(file)) 
     exit(-1);
-  bool success = filesys_create(file, initial_size);
+  }
 
+
+  lock_acquire(filesys_lock);
+  int success = filesys_create(file, initial_size);
+  lock_release(filesys_lock);
+  //printf("success: %d\n", success);
   return success;
 }
 
@@ -191,11 +211,13 @@ int assign_fd(struct file* filePtr){
 }
 //open system call
 int open(const char *file){
-  if(file == NULL)
+  if(!isValidPtr((void *) file))
     exit(-1);
+  lock_acquire(filesys_lock);
 	struct file * fileObj = filesys_open(file); 
+  lock_release(filesys_lock);
   if(fileObj == NULL)
-    exit(1);
+    return -1;
   int fd = assign_fd(fileObj);
   thread_current()->fd_list[thread_current()->fd_index] = fd;
   thread_current()->fd_index++;
@@ -204,7 +226,10 @@ int open(const char *file){
 
 int write (int fd, const void *buffer, unsigned size){
   //printf("Write function: fd value is %d\n", fd);
-  if(fd < 0 || fd > fd_table_size || buffer == NULL){ //fd not correct
+  if(!isValidPtr(buffer))
+    exit(-1);
+
+  if(fd < 0 || fd > fd_table_size){ //fd not correct
     return 0;
   }
   else if(fd != 1){
@@ -270,12 +295,12 @@ unsigned tell (int fd) {
 
 int getSysCallNumber(void * address){
   if(!is_user_vaddr(address) || address < 0x08048000){
-    thread_exit();
+    exit(-1);
   }
   else{
     void * pointer = pagedir_get_page(thread_current()->pagedir, address);
     if(!pointer){
-      thread_exit();
+      exit(-1);
     }
     return *((int *) pointer);
 
@@ -292,7 +317,8 @@ void close(int fd){
 }
 
 int read(int fd, const void *buffer, unsigned size){
- if(fd < 0 || fd > fd_table_size || buffer==NULL){ //fd not correct
+
+ if(fd < 0 || fd > fd_table_size || !isValidPtr(buffer)){ //fd not correct
     exit(-1);
   }
   else if(fd != 0){
@@ -309,13 +335,23 @@ int read(int fd, const void *buffer, unsigned size){
 }
 
 bool remove(const char * file){
-  return filesys_remove(file);
+  if(!isValidPtr((void *) file))
+    exit(-1);
+  lock_acquire(filesys_lock);
+  bool success = filesys_remove(file);
+  lock_release(filesys_lock);
+  return success;
 }
 
 pid_t exec(const char * cmd_line){
-  if(cmd_line == NULL || !is_user_vaddr(ptov(cmd_line)) || is_kernel_vaddr(ptov(cmd_line)) || !strcmp("", cmd_line))
+  if(!isValidPtr((void *)cmd_line))
     exit(-1);
-  return process_execute(cmd_line);
+  int childTid = process_execute(cmd_line);
+  while(thread_current()->tid != childTid){
+    printf("in the while loop\n");
+  }
+
+  return childTid; 
 }
 
 void exit(int status){
