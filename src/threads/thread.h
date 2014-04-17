@@ -108,7 +108,7 @@ struct thread
     struct semaphore exit;        //semaphore for
     int fd_list[100];
     int fd_index; 
-
+    struct semaphore load;        //to load program
 
 
 #ifdef USERPROG

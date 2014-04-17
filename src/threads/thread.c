@@ -195,6 +195,7 @@ thread_create (const char *name, int priority,
   t->fd_index = 0;
 
   sema_init(&t->exit, 0);
+  sema_init(&t->load, 0);
   //t->children = (struct thread**) malloc(100*(sizeof(struct thread**)));
 
 
