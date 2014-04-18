@@ -599,6 +599,7 @@ struct thread* getChild(pid_t pid){
 static void
 schedule (void) 
 {
+
   struct thread *cur = running_thread ();
   struct thread *next = next_thread_to_run ();
   struct thread *prev = NULL;
@@ -607,7 +608,7 @@ schedule (void)
   ASSERT (cur->status != THREAD_RUNNING);
   ASSERT (is_thread (next));
 
-
+  
 
 
   if (cur != next)

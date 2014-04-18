@@ -45,11 +45,15 @@ process_execute (const char *file_name)
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
-  if (tid == TID_ERROR)
+  if (tid == TID_ERROR){
     palloc_free_page (fn_copy);
+  }
+
   struct thread * current = thread_current(); 
   current->children[current->numChildren] = tid;
   current->numChildren++;
+  
+
   return tid;
 }
 
@@ -107,8 +111,10 @@ start_process (void *file_name_)
 
   success = load (file_name, &if_.eip, &if_.esp);
 
-
-
+  //printf("successful: %d\n", success);
+  
+    sema_up(&(thread_current()->load));
+ 
   /* If load failed, quit. */
   palloc_free_page (file_name);
   if (!success){
@@ -163,6 +169,7 @@ process_wait (tid_t child_tid UNUSED)
     }
   }
   if(!childFound){
+    //printf("i didn't find the child\n");
     return -1;
   }
   //printf("list size: %d\n",list_size(&all_list)); 

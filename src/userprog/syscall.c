@@ -211,8 +211,10 @@ int assign_fd(struct file* filePtr){
 }
 //open system call
 int open(const char *file){
+  //printf("i'm in open\n");
   if(!isValidPtr((void *) file))
     exit(-1);
+ 
   lock_acquire(filesys_lock);
 	struct file * fileObj = filesys_open(file); 
   lock_release(filesys_lock);
@@ -221,7 +223,7 @@ int open(const char *file){
   int fd = assign_fd(fileObj);
   thread_current()->fd_list[thread_current()->fd_index] = fd;
   thread_current()->fd_index++;
-	return assign_fd(fileObj); //if failed
+	return fd; //if failed
 }
 
 int write (int fd, const void *buffer, unsigned size){
@@ -251,34 +253,39 @@ int write (int fd, const void *buffer, unsigned size){
 
 int wait (pid_t pid) {
 	//printf("hello we are in wait thank you\n");
-  
+  if(pid == -1){
+    return -1;
+  }
 	//direct child of calling process
 	struct thread * current = thread_current();
-  	int i;
-  	int childFound = 0; 
-  	for(i=0; i< current->numChildren; i++){
-    	if(current->children[i] == pid){
-      		childFound = 1;
-      	}
-  	}
-  	if(!childFound){
-    	return -1;
+  int i;
+  int childFound = 0; 
+  for(i=0; i< current->numChildren; i++){
+    if(current->children[i] == pid){
+      	childFound = 1;
     }
+  }
+  if(!childFound){
+    return -1;
+  }
 
-    if(current->calledWait){
-    	return -1;
-    }
+  
 
+  if(current->calledWait){
+    return -1;
+  }
+  struct thread *threadPtr = getChild(pid);
+  //printf("i'm about to leave wait\n");
     //wait for child to DIE
-    struct thread *threadPtr = getChild(pid);
-    if(threadPtr != NULL){
+  
+  if(threadPtr != NULL){
     	while(threadPtr->isDead == 0){} //wait for it to die
-    }
+  }
 	else{
 		return -1;
 	}
 
-    return threadPtr->exitStatus;
+  return threadPtr->exitStatus;
 }
 
 //returns size of file
@@ -346,10 +353,17 @@ bool remove(const char * file){
 pid_t exec(const char * cmd_line){
   if(!isValidPtr((void *)cmd_line))
     exit(-1);
+
+ //comment
+  
   int childTid = process_execute(cmd_line);
-  while(thread_current()->tid != childTid){
-    printf("in the while loop\n");
-  }
+
+  
+
+  sema_down(&(getChild(childTid)->load));
+  
+  if(getChild(childTid) == NULL)
+    return -1;
 
   return childTid; 
 }
