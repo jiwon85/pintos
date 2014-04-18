@@ -195,6 +195,7 @@ thread_create (const char *name, int priority,
   t->fd_index = 0;
 
   sema_init(&t->exit, 0);
+  sema_init(&t->load, 0);
   //t->children = (struct thread**) malloc(100*(sizeof(struct thread**)));
 
 
@@ -598,6 +599,7 @@ struct thread* getChild(pid_t pid){
 static void
 schedule (void) 
 {
+
   struct thread *cur = running_thread ();
   struct thread *next = next_thread_to_run ();
   struct thread *prev = NULL;
@@ -606,7 +608,7 @@ schedule (void)
   ASSERT (cur->status != THREAD_RUNNING);
   ASSERT (is_thread (next));
 
-
+  
 
 
   if (cur != next)

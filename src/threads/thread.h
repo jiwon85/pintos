@@ -104,7 +104,7 @@ struct thread
 
     tid_t children[100];          //list of array of children pointers
     int numChildren;
-    //struct semaphore load;        //semaphore for 
+    struct semaphore load;        //semaphore for 
     struct semaphore exit;        //semaphore for
     int fd_list[100];
     int fd_index; 
