@@ -118,7 +118,7 @@ thread_start (void)
   intr_enable ();
 
   /* Wait for the idle thread to initialize idle_thread. */
-  sema_down (&idle_started);
+  sema_down (&idle_started); 
 }
 
 /* Called by the timer interrupt handler at each timer tick.
@@ -193,6 +193,8 @@ thread_create (const char *name, int priority,
   t->numChildren = 0;
   t->exitStatus = 0;
   t->fd_index = 0;
+
+  //t->load_success = 1;
 
   sema_init(&t->exit, 0);
   sema_init(&t->load, 0);
