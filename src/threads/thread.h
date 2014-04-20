@@ -108,7 +108,15 @@ struct thread
     struct semaphore exit;        //semaphore for
     int fd_list[100];
     int fd_index; 
+<<<<<<< HEAD
     struct semaphore load;        //to load program
+=======
+    int load_success[100];    //to store success booleans (1 for true and -1 for false)
+    tid_t parentId;
+
+
+
+>>>>>>> 2d8e98cffad8d40505d21075b999106424251f13
 
 
 #ifdef USERPROG

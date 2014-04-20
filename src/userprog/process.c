@@ -51,6 +51,9 @@ process_execute (const char *file_name)
 
   struct thread * current = thread_current(); 
   current->children[current->numChildren] = tid;
+  struct thread *child = getChild(tid);
+  child->parentId = current->tid; //store parent's tid
+
   current->numChildren++;
   
 
@@ -112,8 +115,23 @@ start_process (void *file_name_)
   success = load (file_name, &if_.eip, &if_.esp);
 
   //printf("successful: %d\n", success);
-  
-    sema_up(&(thread_current()->load));
+
+  if(!success){
+    //to do stuff here
+    struct thread* parent = getChild(thread_current()->parentId);
+    //store success booleans
+    if(parent != NULL){
+      int i;
+      for(i = 0; i < parent->numChildren; i++){
+        if(parent->children[i] == thread_current()->tid){
+            parent->load_success[i] = -1;
+        }
+      }
+
+    }
+  }
+
+  sema_up(&(thread_current()->load));
  
   /* If load failed, quit. */
   palloc_free_page (file_name);
@@ -156,73 +174,44 @@ process_wait (tid_t child_tid UNUSED)
   struct list all_list = *get_all_list();
   struct thread *t;  
   bool found = false; 
-  // if (list_empty(&all_list))
-  // {
-  //   return -1;
-  // }
+
   struct thread * current = thread_current();
   int i;
-  int childFound = 0; 
+  int childFound = 0;
+  int indexOfChild = 0; 
   for(i=0; i<current->numChildren; i++){
     if(current->children[i] == child_tid){
       childFound = 1;
+      indexOfChild = i;
     }
   }
   if(!childFound){
-    //printf("i didn't find the child\n");
     return -1;
   }
-  //printf("list size: %d\n",list_size(&all_list)); 
-  //printf("last thread id: %d\n",list_entry(list_end(&all_list)->prev,struct thread, allelem)->tid); 
 
-  e = list_begin(&all_list); 
-  while(!found && (e!=list_end(&all_list))) {
-    t = list_entry(e, struct thread, allelem); 
-    //printf("@t->id %d \n",t->tid); 
-    //printf("The name of the thread: %s\n",t->name);
-    if(t->tid==child_tid) {
-      found = true; 
-      chosenOne = t; 
-    }
-    e = list_next(e); 
-  }
-
-
-  /*for (e = list_begin (&all_list); e != list_end (&all_list);
-       e = list_next (e))
-    {
-      struct thread *t = list_entry (e, struct thread, allelem);
-      printf("tid of thread is %d\n", t->tid);
-      if(t->tid == child_tid){
-        printf("we found the chosen one\n");
-        chosenOne = t;
-        
-      }
-    }*/
-
-    //printf("exiting the while loop\n");
-  //before bothering to wait, check if tid is INVALID
+  chosenOne = getChild(child_tid);
   if(chosenOne == NULL ){
-    return -1;
+    int saved = thread_current()->load_success[indexOfChild];
+    thread_current()->load_success[indexOfChild] = -1;
+    return saved;
   }
 
   //only proceed if calledWait is 0
   if(chosenOne->calledWait == 0){
       //wait for thread to die
+    chosenOne->calledWait = 1;
       if(chosenOne->isDead != 1){ // makes parent wait
         sema_down(&chosenOne->exit);
       }
 
       //printf("done with while loop suckaaa!\n");
 
-      //check if it's kernel thread
-      if(chosenOne->isFromKernel == 1){
-        return -1;
-      }
-      chosenOne->calledWait = 1;
-      return 0;
+      int saved = thread_current()->load_success[indexOfChild];
+      thread_current()->load_success[indexOfChild] = -1;
+      return saved;
   }
   //done waiting thread
+  //printf("exiting because i've already called wait\n");
   return -1;
 }
 

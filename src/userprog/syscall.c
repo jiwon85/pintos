@@ -252,40 +252,46 @@ int write (int fd, const void *buffer, unsigned size){
 //only if the calling process received pid as a return value from a successful call to exec. 
 
 int wait (pid_t pid) {
-	//printf("hello we are in wait thank you\n");
-  if(pid == -1){
+  if(pid == -1)
     return -1;
-  }
+
+  return process_wait(pid);
 	//direct child of calling process
-	struct thread * current = thread_current();
-  int i;
-  int childFound = 0; 
-  for(i=0; i< current->numChildren; i++){
-    if(current->children[i] == pid){
-      	childFound = 1;
-    }
-  }
-  if(!childFound){
-    return -1;
-  }
+	// struct thread * current = thread_current();
+ //  int i;
+ //  int childFound = 0; 
+ //  for(i=0; i< current->numChildren; i++){
+ //    if(current->children[i] == pid){
+ //      	childFound = 1;
+ //    }
+ //  }
+ //  if(!childFound){
+ //    //printf("child was not found\n");
+ //    return -1;
+ //  }
 
+ //  //
+
+ //  if(current->calledWait){
+ //    //printf("we've already called wait\n");
+ //    return -1;
+ //  }
+ //  else{
+ //    current->calledWait = 1;
+ //  }
+ //  struct thread *threadPtr = getChild(pid);
+ //  //printf("i'm about to leave wait\n");
+ //    //wait for child to DIE
   
-
-  if(current->calledWait){
-    return -1;
-  }
-  struct thread *threadPtr = getChild(pid);
-  //printf("i'm about to leave wait\n");
-    //wait for child to DIE
-  
-  if(threadPtr != NULL){
-    	while(threadPtr->isDead == 0){} //wait for it to die
-  }
-	else{
-		return -1;
-	}
-
-  return threadPtr->exitStatus;
+ //  if(threadPtr != NULL){
+ //    	while(threadPtr->isDead == 0){} //wait for it to die
+ //  }
+	// else{
+ //    //printf("getchild returned NULL\n");
+	// 	return -1;
+	// }
+ //  //printf("exit status is %d\n", threadPtr->exitStatus);
+ //  return threadPtr->exitStatus;
 }
 
 //returns size of file
@@ -354,24 +360,53 @@ pid_t exec(const char * cmd_line){
   if(!isValidPtr((void *)cmd_line))
     exit(-1);
 
- //comment
-  
+  struct thread* parent = thread_current();
+
   int childTid = process_execute(cmd_line);
 
-  
 
   sema_down(&(getChild(childTid)->load));
   
-  if(getChild(childTid) == NULL)
-    return -1;
+
+  int i;
+  for(i=0; i<parent->numChildren; i++){
+    if(parent->children[i] == childTid){
+      if(parent->load_success[i] == -1){
+        //printf("returning -1\n");
+        return -1;
+
+      }
+    }
+  } 
+    //printf("Load_success is returning -1\n");
+
+  
+  
 
   return childTid; 
 }
 
 void exit(int status){
+  //printf("hi my pid is %d\n", thread_current()->tid);
+  thread_current()->exitStatus = status;
+
+
+  struct thread* parent = getChild(thread_current()->parentId);
+    //store success booleans
+    if(parent != NULL){
+      int i;
+      for(i = 0; i < parent->numChildren; i++){
+        if(parent->children[i] == thread_current()->tid){
+            parent->load_success[i] = status;
+        }
+      }
+
+    }
   if(status < -1 || status > 255)
     status = -1;
+
   printf("%s: exit(%d)\n", thread_current()->thread_name, status);
+
   thread_exit();
 }
 
