@@ -165,7 +165,7 @@ and jump to it. */
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  //printf("tid we're looking for is %d\n", child_tid);
+
 
   //cases to take care of:
   //if it was not a child of the calling process
@@ -207,9 +207,10 @@ process_wait (tid_t child_tid UNUSED)
       //printf("done with while loop suckaaa!\n");
 
       int saved = thread_current()->load_success[indexOfChild];
-      thread_current()->load_success[indexOfChild] = -1;
+      
       return saved;
   }
+  thread_current()->load_success[indexOfChild] = -1;
   //done waiting thread
   //printf("exiting because i've already called wait\n");
   return -1;

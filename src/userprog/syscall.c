@@ -15,6 +15,8 @@ int fd_table_size;
 struct lock *filesys_lock; //is this all i need?
 struct condition * cond;
 
+//struct inode * inode_table;
+
 
 
 
@@ -41,6 +43,8 @@ syscall_init (void)
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
   fd_table_size = 100;
   fd_table = malloc(sizeof(struct file * )*fd_table_size);
+  //inode_table = malloc(sizeof(struct inode)*fd_table_size);
+
   filesys_lock = malloc(sizeof(struct lock));
   cond = malloc(sizeof(struct condition));
   lock_init(filesys_lock);
@@ -204,6 +208,8 @@ int assign_fd(struct file* filePtr){
   //resize the fd table because there is no more space
   fd_table_size *=2;
   fd_table = realloc (fd_table, fd_table_size);
+
+  //size_table = realloc (size_table, fd_table_size);
   fd_table[i] = filePtr;
   return i;
 
@@ -221,8 +227,16 @@ int open(const char *file){
   if(fileObj == NULL)
     return -1;
   int fd = assign_fd(fileObj);
+
   thread_current()->fd_list[thread_current()->fd_index] = fd;
   thread_current()->fd_index++;
+  if(fd_table[fd])
+    printf("the file ptr is: %p\n", fileObj);
+  else
+    printf("the file table entry is NULL\n");
+  //size_table[fd] = file_length(fileObj);
+  printf("the fd i'm assigning is %d AKA fileowner with tid %d\n", fd, thread_current()->tid);
+  
 	return fd; //if failed
 }
 
@@ -296,8 +310,13 @@ int wait (pid_t pid) {
 
 //returns size of file
 int filesize (int fd) { 
-  struct file * file = fd_table[fd];
-  return file_length (file); 
+  
+  
+ if(fd_table[fd] == NULL){
+  printf("file is null in filesize\n");
+  return -1;
+ }
+  return file_length(fd_table[fd]);
 }
 
 //Returns the position of the next byte to be read or written in open file fd
@@ -321,11 +340,30 @@ int getSysCallNumber(void * address){
 }
 
 void close(int fd){
+  printf("i'm at close and fd is %d and tid is %d\n", fd, thread_current()->tid);
+  printf("the filesize in read is %d\n", filesize(fd));
   if(fd<3 || fd>fd_table_size)
     exit(-1);
   if(fd_table[fd] != NULL){
-    file_close(fd_table[fd]);
-    fd_table[fd] = NULL;
+    int i; 
+
+    for(i = 0; i<thread_current()->fd_index; i++){
+      if(thread_current()->fd_list[i] == fd){
+        file_close(fd_table[fd]);
+        printf("i'm in close!\n");
+        thread_current()->exitStatus = 0;
+        fd_table[fd] = NULL;
+        return;
+      }
+    }
+    exit(-1);
+   
+    
+
+
+  }
+  else{
+    exit(-1);
   }
 }
 
@@ -340,6 +378,7 @@ int read(int fd, const void *buffer, unsigned size){
       exit(-1);
     }
     int bytes_read = file_read(filePtr, buffer, size);
+
     return bytes_read;
   }
   else{
