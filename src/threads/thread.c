@@ -691,9 +691,9 @@ bool comparative(const struct list_elem *a, const struct list_elem *b, void *aux
 }
 
 void check_priority(void) {
-  struct thread *t = list_entry(list_front(&ready_list),struct thread,elem); 
- 
   if(list_empty(&ready_list)) return; 
+  struct thread *t = list_entry(list_front(&ready_list),struct thread,elem); 
+  
   if(intr_context()) {
     if(thread_current()->priority < t->priority) {
       intr_yield_on_return(); 
