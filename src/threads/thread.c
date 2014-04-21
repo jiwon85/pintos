@@ -316,33 +316,16 @@ thread_unblock (struct thread *t)
   old_level = intr_disable ();
 
   ASSERT (t->status == THREAD_BLOCKED);
-  //list_push_back (&ready_list, &t->elem);
-  
-  //CHANGED HERE **
-  //int oldPri = thread_get_priority();
-  //t->status = THREAD_RUNNING;
-  
-
-  //**printf("i'm in unblock the tid of thread is %d\n", t->tid);
-  
-
   list_insert_ordered (&ready_list, &t->elem, comparative, 0);
-  
-  //t->status = THREAD_BLOCKED;
-  //list_sort(&ready_list, comparative, 0);
-  //list_reverse(&ready_list);
   t->status = THREAD_READY;
-  // if(t->priority > oldPri){
-  //   thread_yield();
+  // @TODO : program doesn't seem to make a difference without this code... 
+  // if(!t->called) {
+  //   t->called = 1; 
+  // } else {
+  //   if(t->priority > &thread_current()->priority){
+  //     thread_yield();
+  //   }
   // }
-  //printf("%d > %d\n",t->priority,thread_current()->priority); 
-  if(!t->called) {
-    t->called = 1; 
-  } else {
-    if(t->priority > &thread_current()->priority){
-      thread_yield();
-    }
-  }
   
   intr_set_level (old_level);
   
@@ -411,37 +394,15 @@ void
 thread_yield (void) 
 {
  
-  //printf("going to current in yield\n");
-
-  
-  //printf("came back from current in yield\n");
   enum intr_level old_level;
   
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
   struct thread *cur = thread_current ();
-  if (cur != idle_thread){ 
-    //list_push_back (&ready_list, &t->elem);
-  //CHANGED HERE **
-  // cur->status = THREAD_RUNNING;
 
-
-
-   // lock_acquire(&list_lock);
-   //do{
-     // cond_wait(&notFull, &list_lock);
-   //}while(0);
-   list_insert_ordered (&ready_list, &cur->elem, comparative, 0);
-
-
-
-  //  cond_signal(&notEmpty, &list_lock);
-  //  lock_release(&list_lock);
-  // list_sort(&ready_list, comparative, 0);
-  // list_reverse(&ready_list);
-  }
-
+  if (cur != idle_thread)
+    list_insert_ordered (&ready_list, &cur->elem, comparative, 0);
 
   cur->status = THREAD_READY;
   schedule ();
@@ -471,20 +432,14 @@ thread_set_priority (int new_priority)
 {
   //printf("going to current in setpri\n");
 
-  enum intr_level old_level = intr_disable ();
-
-  // thread_current ()->priority = new_priority;
-  // struct thread *max = list_entry (list_max(&ready_list, comparative, 0), struct thread, elem);
-  // if(&max->priority > new_priority){
-  //   thread_yield();
-  // }
-  int old_priority = thread_current()->priority; 
-  thread_current()->priority = new_priority; 
-  if(old_priority < thread_current()->priority) {
-    // donate priority 
-  } else if(old_priority > thread_current()->priority) {
+  enum intr_level old_level = intr_disable (); 
+  struct thread *cur = thread_current(); 
+  int old_priority = cur->priority; 
+  cur->priority = new_priority; 
+  if(old_priority < cur->priority) {
+    priority_donation(); 
+  } else if(old_priority > cur->priority) {
     check_priority(); 
-    //thread_yield(); 
   }
 
   intr_set_level (old_level);
@@ -635,7 +590,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->priority = priority;
   t->magic = THREAD_MAGIC;
   t->called = 0; 
-  list_push_back (&all_list, &t->allelem);
+  list_insert_ordered(&all_list, &t->allelem, comparative, 0); 
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
@@ -740,22 +695,29 @@ void check_priority(void) {
  
   if(list_empty(&ready_list)) return; 
   if(intr_context()) {
-    if(thread_current()->priority <- t->priority) {
+    if(thread_current()->priority < t->priority) {
       intr_yield_on_return(); 
     }
     return; 
   } 
   if(thread_current()->priority < t->priority)
     thread_yield(); 
-  // if(list_empty(&ready_list)) return; 
-  // if(thread_current()->priority <= t->priority) {
-  //   if(intr_context()) {
-  //     intr_yield_on_return(); 
-  //   } 
-  //   thread_yield(); 
-  // }
+}
 
-  // return; 
+void priority_donation(void) {
+  struct thread *cur = thread_current(); 
+  struct lock *thread_lock = cur->priority_lock; 
+  while(thread_lock) {
+    if(thread_lock->holder && thread_lock->holder->priority < cur->priority) {
+      thread_lock->holder->priority = cur->priority; 
+      cur = thread_lock->holder; 
+      thread_lock = cur->priority_lock; 
+    } else return; 
+  }
+}
+
+struct list *get_ready_list(void) {
+  return &ready_list; 
 }
 
 /* Schedules a new process.  At entry, interrupts must be off and

@@ -99,6 +99,10 @@ struct thread
     struct list_elem elem;              /* List element. */
     struct list_elem sleep_elem;
 
+    struct lock *priority_lock; 
+    struct list donation_list; 
+    struct list_elem donation_list_elem; 
+
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
@@ -147,5 +151,7 @@ struct list* get_list();
 bool comparative(const struct list_elem *a, const struct list_elem *b, void *aux);
 
 void check_priority(void); 
+void priority_donation(void); 
+struct list *get_ready_list(void); 
 
 #endif /* threads/thread.h */
