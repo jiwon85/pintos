@@ -433,9 +433,18 @@ thread_set_priority (int new_priority)
   //printf("going to current in setpri\n");
 
   enum intr_level old_level = intr_disable (); 
+  struct thread *check; 
   struct thread *cur = thread_current(); 
   int old_priority = cur->priority; 
   cur->original_priority = new_priority; 
+  cur->priority = new_priority; 
+  if(!list_empty(&cur->donation_list)) {
+    check = list_entry(list_front(&cur->donation_list), struct thread, donation_list_elem); 
+    if(check->priority > cur->priority) {
+      cur->priority = check->priority; 
+    }
+  }
+
   if(old_priority < cur->priority) {
     priority_donation(); 
   } 
