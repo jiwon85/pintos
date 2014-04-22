@@ -230,20 +230,20 @@ int open(const char *file){
 
   thread_current()->fd_list[thread_current()->fd_index] = fd;
   thread_current()->fd_index++;
-  if(fd_table[fd])
-    printf("the file ptr is: %p\n", fileObj);
-  else
-    printf("the file table entry is NULL\n");
-  //size_table[fd] = file_length(fileObj);
-  printf("the fd i'm assigning is %d AKA fileowner with tid %d\n", fd, thread_current()->tid);
+  // if(fd_table[fd])
+  //   printf("the file ptr is: %p\n", fileObj);
+  // else
+  //   printf("the file table entry is NULL\n");
+  // //size_table[fd] = file_length(fileObj);
+  // printf("the fd i'm assigning is %d AKA fileowner with tid %d\n", fd, thread_current()->tid);
   
 	return fd; //if failed
 }
 
 int write (int fd, const void *buffer, unsigned size){
-  //printf("Write function: fd value is %d\n", fd);
-  if(!isValidPtr(buffer))
+  if(!isValidPtr(buffer)){
     exit(-1);
+  }
 
   if(fd < 0 || fd > fd_table_size){ //fd not correct
     return 0;
@@ -253,9 +253,9 @@ int write (int fd, const void *buffer, unsigned size){
     if(filePtr == NULL || file_is_writable(filePtr)){ //fd does not actually point to a file
       return 0;
     }
-    int bytes_written = file_write(filePtr, buffer, size);
-    file_deny_write(filePtr);
-    return bytes_written;
+      int bytes_written = file_write(filePtr, buffer, size);
+      file_deny_write(filePtr);
+      return bytes_written;
   }
   else{
     putbuf(buffer, size);
@@ -313,7 +313,7 @@ int filesize (int fd) {
   
   
  if(fd_table[fd] == NULL){
-  printf("file is null in filesize\n");
+  //printf("file is null in filesize\n");
   return -1;
  }
   return file_length(fd_table[fd]);
@@ -340,8 +340,8 @@ int getSysCallNumber(void * address){
 }
 
 void close(int fd){
-  printf("i'm at close and fd is %d and tid is %d\n", fd, thread_current()->tid);
-  printf("the filesize in read is %d\n", filesize(fd));
+  //printf("i'm at close and fd is %d and tid is %d\n", fd, thread_current()->tid);
+  //printf("the filesize in read is %d\n", filesize(fd));
   if(fd<3 || fd>fd_table_size)
     exit(-1);
   if(fd_table[fd] != NULL){
@@ -350,7 +350,7 @@ void close(int fd){
     for(i = 0; i<thread_current()->fd_index; i++){
       if(thread_current()->fd_list[i] == fd){
         file_close(fd_table[fd]);
-        printf("i'm in close!\n");
+        //printf("i'm in close!\n");
         thread_current()->exitStatus = 0;
         fd_table[fd] = NULL;
         return;

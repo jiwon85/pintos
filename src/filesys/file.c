@@ -172,3 +172,7 @@ file_is_writable (struct file *file){
   ASSERT (file != NULL);
   return file->deny_write;
 }
+
+off_t getPos(struct file *file){
+  return file->pos;
+}

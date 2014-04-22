@@ -19,6 +19,7 @@ int order[BLOCK_CNT];
 void
 test_main (void) 
 {
+  msg("in test_main\n");
   const char *file_name = "bazzle";
   int fd;
   size_t i;
@@ -28,10 +29,12 @@ test_main (void)
 
   for (i = 0; i < BLOCK_CNT; i++)
     order[i] = i;
-
+  printf("About to go to create\n"); //our comm
   CHECK (create (file_name, TEST_SIZE), "create \"%s\"", file_name);
+  printf("Doen with create\n"); //our comm
   CHECK ((fd = open (file_name)) > 1, "open \"%s\"", file_name);
 
+  printf("Finished open sys call\n"); //our comment here
   msg ("write \"%s\" in random order", file_name);
   shuffle (order, BLOCK_CNT, sizeof *order);
   for (i = 0; i < BLOCK_CNT; i++) 
