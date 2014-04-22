@@ -99,6 +99,7 @@ struct thread
     struct list_elem elem;              /* List element. */
     struct list_elem sleep_elem;
 
+    int original_priority; 
     struct lock *priority_lock; 
     struct list donation_list; 
     struct list_elem donation_list_elem; 

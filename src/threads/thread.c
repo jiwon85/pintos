@@ -435,10 +435,11 @@ thread_set_priority (int new_priority)
   enum intr_level old_level = intr_disable (); 
   struct thread *cur = thread_current(); 
   int old_priority = cur->priority; 
-  cur->priority = new_priority; 
+  cur->original_priority = new_priority; 
   if(old_priority < cur->priority) {
     priority_donation(); 
-  } else if(old_priority > cur->priority) {
+  } 
+  if(old_priority > cur->priority) {
     check_priority(); 
   }
 
@@ -587,10 +588,13 @@ init_thread (struct thread *t, const char *name, int priority)
   t->status = THREAD_BLOCKED;
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
-  t->priority = priority;
   t->magic = THREAD_MAGIC;
   t->called = 0; 
   list_insert_ordered(&all_list, &t->allelem, comparative, 0); 
+
+  t->original_priority = priority; 
+  t->priority = priority; 
+  list_init(&t->donation_list); 
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
@@ -704,7 +708,7 @@ void check_priority(void) {
     thread_yield(); 
 }
 
-void priority_donation(void) {
+void priority_donation(void) { 
   struct thread *cur = thread_current(); 
   struct lock *thread_lock = cur->priority_lock; 
   while(thread_lock) {
