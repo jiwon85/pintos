@@ -263,7 +263,7 @@ lock_release (struct lock *lock)
 
   thread_current()->priority = thread_current()->original_priority; 
   if(!list_empty(&thread_current()->donation_list)) {
-    check = list_entry(list_front(&thread_current()->donation_list), struct thread, donation_list_elem); 
+    check = list_entry(list_back(&thread_current()->donation_list), struct thread, donation_list_elem); 
     if(check->priority > thread_current()->priority) {
       thread_current()->priority = check->priority; 
     }

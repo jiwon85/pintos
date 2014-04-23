@@ -245,6 +245,7 @@ thread_create (const char *name, int priority,
   //end mine
 
 
+  /* Add to run queue. */
   thread_unblock (t); 
 
   old_level = intr_disable(); 
@@ -252,7 +253,6 @@ thread_create (const char *name, int priority,
   intr_set_level(old_level);
 
 
-  /* Add to run queue. */
   
 
   //t->status = THREAD_RUNNING;
@@ -316,7 +316,7 @@ thread_unblock (struct thread *t)
   old_level = intr_disable ();
 
   ASSERT (t->status == THREAD_BLOCKED);
-  list_insert_ordered (&ready_list, &t->elem, comparative, 0);
+  list_insert_ordered (&ready_list, &t->elem, &comparative, 0);
   t->status = THREAD_READY;
   // @TODO : program doesn't seem to make a difference without this code... 
   // if(!t->called) {
@@ -402,7 +402,7 @@ thread_yield (void)
   struct thread *cur = thread_current ();
 
   if (cur != idle_thread)
-    list_insert_ordered (&ready_list, &cur->elem, comparative, 0);
+    list_insert_ordered (&ready_list, &cur->elem, &comparative, 0);
 
   cur->status = THREAD_READY;
   schedule ();
@@ -439,7 +439,7 @@ thread_set_priority (int new_priority)
   cur->original_priority = new_priority; 
   cur->priority = new_priority; 
   if(!list_empty(&cur->donation_list)) {
-    check = list_entry(list_front(&cur->donation_list), struct thread, donation_list_elem); 
+    check = list_entry(list_back(&cur->donation_list), struct thread, donation_list_elem); 
     if(check->priority > cur->priority) {
       cur->priority = check->priority; 
     }
@@ -599,7 +599,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->magic = THREAD_MAGIC;
   t->called = 0; 
-  list_insert_ordered(&all_list, &t->allelem, comparative, 0); 
+  list_insert_ordered(&all_list, &t->allelem, &comparative, 0); 
 
   t->original_priority = priority; 
   t->priority = priority; 
@@ -631,7 +631,7 @@ next_thread_to_run (void)
     return idle_thread;
   else{
     //struct thread * popped; 
-    struct thread * temp = list_entry (list_max(&ready_list, comparative, 0), struct thread, elem);
+    struct thread * temp = list_entry (list_max(&ready_list, &comparative, 0), struct thread, elem);
     list_remove(&temp->elem);
 
 
@@ -705,7 +705,7 @@ bool comparative(const struct list_elem *a, const struct list_elem *b, void *aux
 
 void check_priority(void) {
   if(list_empty(&ready_list)) return; 
-  struct thread *t = list_entry(list_front(&ready_list),struct thread,elem); 
+  struct thread *t = list_entry(list_back(&ready_list),struct thread,elem); 
   
   if(intr_context()) {
     if(thread_current()->priority < t->priority) {
@@ -713,8 +713,17 @@ void check_priority(void) {
     }
     return; 
   } 
-  if(thread_current()->priority < t->priority)
+  if(thread_current()->priority < t->priority) {
     thread_yield(); 
+  }
+  // if(intr_context()) {
+  //   if(thread_current()->priority < t->priority) {
+  //     intr_yield_on_return(); 
+  //   }
+  //   return; 
+  // } 
+  // if(thread_current()->priority < t->priority)
+  //   thread_yield(); 
 }
 
 void priority_donation(void) { 
