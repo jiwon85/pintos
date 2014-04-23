@@ -731,3 +731,10 @@ install_page (void *upage, void *kpage, bool writable)
   return (pagedir_get_page (t->pagedir, upage) == NULL
           && pagedir_set_page (t->pagedir, upage, kpage, writable));
 }
+
+int isExecutable(struct file *file){
+  struct Elf32_Ehdr elf_header;
+  file_read_at (file, &elf_header, sizeof elf_header, 0);
+  if(elf_header.e_type == 2)
+    return 1;
+}

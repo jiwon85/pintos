@@ -10,6 +10,7 @@
 #include "threads/synch.h"
 
 
+
 static struct file ** fd_table;
 int fd_table_size;
 struct lock *filesys_lock; //is this all i need?
@@ -253,9 +254,15 @@ int write (int fd, const void *buffer, unsigned size){
     if(filePtr == NULL || file_is_writable(filePtr)){ //fd does not actually point to a file
       return 0;
     }
-      int bytes_written = file_write(filePtr, buffer, size);
-      file_deny_write(filePtr);
-      return bytes_written;
+    //make sure it's not an executable
+    // if(isExecutable(filePtr) && !file_is_writable(filePtr)){
+    //   file_deny_write(filePtr);
+    //   return 0;
+    // }
+    //not executable, will write to it
+    int bytes_written = file_write(filePtr, buffer, size);   
+    file_deny_write(filePtr);
+    return bytes_written;   
   }
   else{
     putbuf(buffer, size);
