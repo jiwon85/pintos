@@ -251,26 +251,28 @@ int write (int fd, const void *buffer, unsigned size){
   }
   else if(fd != 1){
     struct file * filePtr = (struct file *) fd_table[fd];
-    if(filePtr == NULL || file_is_writable(filePtr)){ //fd does not actually point to a file
+    if(filePtr == NULL){ //fd does not actually point to a file
       return 0;
     }
     //make sure it's not an executable
-    if(isExecutable(filePtr) && !file_is_writable(filePtr)){
-      file_deny_write(filePtr);
-      return 0;
-    }
+    // if(isExecutable(filePtr) && !file_is_writable(filePtr)){
+    //   file_deny_write(filePtr);
+    //   return 0;
+    // }
 
-    int i;
-    for(i = 0; i<thread_current()->fd_index; i++){
-      if(thread_current()->fd_list[i] == fd){
-        //not executable, will write to it
-        int bytes_written = file_write(filePtr, buffer, size);   
-        //file_deny_write(filePtr);
-        return bytes_written;  
-      }
-    }
-    exit(0);
-   
+    // int i;
+    // for(i = 0; i<thread_current()->fd_index; i++){
+    //   if(thread_current()->fd_list[i] == fd){
+    //     //not executable, will write to it
+    //     int bytes_written = file_write(filePtr, buffer, size);   
+    //     //file_deny_write(filePtr);
+    //     return bytes_written;  
+    //   }
+    // }
+    // exit(0);
+    int bytes_written = file_write(filePtr, buffer, size);   
+         //file_deny_write(filePtr);
+    return bytes_written;  
   }
   else{
     putbuf(buffer, size);

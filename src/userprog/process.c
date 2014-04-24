@@ -113,7 +113,7 @@ start_process (void *file_name_)
   //hex_dump(espTemp, ofs, PHYS_BASE, 1);
 
   success = load (file_name, &if_.eip, &if_.esp);
-
+  file_deny_write(file_name);
   //printf("successful: %d\n", success);
 
   if(!success){
@@ -447,7 +447,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
  done:
   /* We arrive here whether the load is successful or not. */
-  file_close (file);
+  //file_close (file);
 
   return success;
 }
