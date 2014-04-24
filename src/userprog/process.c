@@ -113,7 +113,7 @@ start_process (void *file_name_)
   //hex_dump(espTemp, ofs, PHYS_BASE, 1);
 
   success = load (file_name, &if_.eip, &if_.esp);
-
+  //file_deny_write(file_name);
   //printf("successful: %d\n", success);
 
   if(!success){
@@ -130,6 +130,7 @@ start_process (void *file_name_)
 
     }
   }
+  
 
   sema_up(&(thread_current()->load));
  
