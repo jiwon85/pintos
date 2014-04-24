@@ -344,7 +344,7 @@ unsigned tell (int fd) {
 }
 
 int getSysCallNumber(void * address){
-  if(!is_user_vaddr(address) || address < 0x08048000){
+  if(!is_user_vaddr(address)){ 
     exit(-1);
   }
   else{
