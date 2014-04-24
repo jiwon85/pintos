@@ -228,7 +228,7 @@ int open(const char *file){
   if(fileObj == NULL)
     return -1;
   int fd = assign_fd(fileObj);
-
+  
   thread_current()->fd_list[thread_current()->fd_index] = fd;
   thread_current()->fd_index++;
   // if(fd_table[fd])
@@ -255,14 +255,22 @@ int write (int fd, const void *buffer, unsigned size){
       return 0;
     }
     //make sure it's not an executable
-    // if(isExecutable(filePtr) && !file_is_writable(filePtr)){
-    //   file_deny_write(filePtr);
-    //   return 0;
-    // }
-    //not executable, will write to it
-    int bytes_written = file_write(filePtr, buffer, size);   
-    file_deny_write(filePtr);
-    return bytes_written;   
+    if(isExecutable(filePtr) && !file_is_writable(filePtr)){
+      file_deny_write(filePtr);
+      return 0;
+    }
+
+    int i;
+    for(i = 0; i<thread_current()->fd_index; i++){
+      if(thread_current()->fd_list[i] == fd){
+        //not executable, will write to it
+        int bytes_written = file_write(filePtr, buffer, size);   
+        //file_deny_write(filePtr);
+        return bytes_written;  
+      }
+    }
+    exit(0);
+   
   }
   else{
     putbuf(buffer, size);
@@ -364,10 +372,7 @@ void close(int fd){
       }
     }
     exit(-1);
-   
-    
-
-
+ 
   }
   else{
     exit(-1);

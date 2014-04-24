@@ -737,4 +737,5 @@ int isExecutable(struct file *file){
   file_read_at (file, &elf_header, sizeof elf_header, 0);
   if(elf_header.e_type == 2)
     return 1;
+  return 0;
 }
