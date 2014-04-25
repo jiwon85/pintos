@@ -18,6 +18,8 @@ struct inode_disk
     off_t length;                       /* File size in bytes. */
     unsigned magic;                     /* Magic number. */
     uint32_t unused[125];               /* Not used. */
+    //int identifier;
+
   };
 
 /* Returns the number of sectors to allocate for an inode SIZE
@@ -93,10 +95,25 @@ inode_create (block_sector_t sector, off_t length)
           if (sectors > 0) 
             {
               static char zeros[BLOCK_SECTOR_SIZE];
-              size_t i;
-              
-              for (i = 0; i < sectors; i++) 
-                block_write (fs_device, disk_inode->start + i, zeros);
+              size_t i = 0;
+              off_t lengthCopy = length;
+              while(lengthCopy>0){ 
+                struct inode_disk * disk_temp = calloc(1, sizeof*disk_inode);
+                disk_temp->length = length; //this is probs wrong
+                disk_temp-> magic = INODE_MAGIC;
+                if (free_map_allocate(sectors, &disk_temp->start)){
+                  if(sectors>0){
+                    block_write(fs_device, disk_inode->start + (sectors*i), bitmap_create((size_t)BLOCK_SECTOR_SIZE)); 
+                    // size_t j;
+                    // for(j=0; j<sectors; j++){
+                    //   block_write (fs_device, disk_inode->start + j, zeros);
+                    // }
+                  }
+                }
+                lengthCopy -= BLOCK_SECTOR_SIZE;
+                block_write (fs_device, disk_inode->start + i, disk_temp);
+                i++;
+              }
             }
           success = true; 
         } 
