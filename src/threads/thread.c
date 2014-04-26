@@ -445,12 +445,10 @@ thread_set_priority (int new_priority)
     }
   }
 
-  if(old_priority < cur->priority) {
+  if(old_priority <= cur->priority) 
     priority_donation(); 
-  } 
-  if(old_priority > cur->priority) {
+  if(old_priority > cur->priority) 
     check_priority(); 
-  }
 
   intr_set_level (old_level);
 
@@ -706,31 +704,18 @@ bool comparative(const struct list_elem *a, const struct list_elem *b, void *aux
 void check_priority(void) {
   if(list_empty(&ready_list)) return; 
   struct thread *t = list_entry(list_back(&ready_list),struct thread,elem); 
-  
-  if(intr_context()) {
-    if(thread_current()->priority < t->priority) {
-      intr_yield_on_return(); 
-    }
-    return; 
-  } 
-  if(thread_current()->priority < t->priority) {
-    thread_yield(); 
+
+  if(thread_current()->priority <= t->priority) {
+    if(intr_context()) intr_yield_on_return(); 
+    else thread_yield(); 
   }
-  // if(intr_context()) {
-  //   if(thread_current()->priority < t->priority) {
-  //     intr_yield_on_return(); 
-  //   }
-  //   return; 
-  // } 
-  // if(thread_current()->priority < t->priority)
-  //   thread_yield(); 
 }
 
 void priority_donation(void) { 
   struct thread *cur = thread_current(); 
   struct lock *thread_lock = cur->priority_lock; 
   while(thread_lock) {
-    if(thread_lock->holder && thread_lock->holder->priority < cur->priority) {
+    if(thread_lock->holder->priority <= cur->priority) {
       thread_lock->holder->priority = cur->priority; 
       cur = thread_lock->holder; 
       thread_lock = cur->priority_lock; 
