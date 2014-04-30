@@ -165,6 +165,13 @@ syscall_handler (struct intr_frame *f UNUSED)
       tempNum = *(int *) arg0;
       close(tempNum);
       break;
+    case SYS_CHDIR:
+    case SYS_MKDIR: 
+    case SYS_READDIR: 
+    case SYS_ISDIR: 
+      f->eax = 0; 
+      return 0; 
+      break; 
     default: 
       thread_exit();
       break;
