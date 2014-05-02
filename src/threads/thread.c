@@ -248,9 +248,9 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t); 
 
-  old_level = intr_disable(); 
+  //old_level = intr_disable(); 
   check_priority(); 
-  intr_set_level(old_level);
+  //intr_set_level(old_level);
 
 
   
@@ -432,7 +432,7 @@ thread_set_priority (int new_priority)
 {
   //printf("going to current in setpri\n");
 
-  enum intr_level old_level = intr_disable (); 
+  //enum intr_level old_level = intr_disable (); 
   struct thread *check; 
   struct thread *cur = thread_current(); 
   int old_priority = cur->priority; 
@@ -450,7 +450,7 @@ thread_set_priority (int new_priority)
   if(old_priority > cur->priority) 
     check_priority(); 
 
-  intr_set_level (old_level);
+  //intr_set_level (old_level);
 
 }
 
@@ -459,9 +459,9 @@ int
 thread_get_priority (void) 
 {
   //printf("i'm in get pri\n");
-  enum intr_level old_level = intr_disable(); 
+  //enum intr_level old_level = intr_disable(); 
   int priority = thread_current()->priority; 
-  intr_set_level(old_level); 
+  //intr_set_level(old_level); 
   return priority;
 
 }
@@ -471,9 +471,9 @@ void
 thread_set_nice (int nice UNUSED) 
 {
   /* Not yet implemented. */
-  enum intr_level old_level = intr_disable(); 
+  //enum intr_level old_level = intr_disable(); 
   thread_current()->nice = nice; 
-  intr_set_level(old_level); 
+  //intr_set_level(old_level); 
   check_priority(); 
 }
 
@@ -482,9 +482,9 @@ int
 thread_get_nice (void) 
 {
   /* Not yet implemented. */
-  enum intr_level old_level = intr_disable(); 
+  //enum intr_level old_level = intr_disable(); 
   int nice = thread_current()->nice; 
-  intr_set_level(old_level); 
+  //intr_set_level(old_level); 
   return nice;
 }
 
@@ -705,10 +705,12 @@ void check_priority(void) {
   if(list_empty(&ready_list)) return; 
   struct thread *t = list_entry(list_back(&ready_list),struct thread,elem); 
 
+  enum intr_level old_level = intr_disable(); 
   if(thread_current()->priority <= t->priority) {
     if(intr_context()) intr_yield_on_return(); 
     else thread_yield(); 
   }
+  intr_set_level(old_level); 
 }
 
 void priority_donation(void) { 
