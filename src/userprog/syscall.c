@@ -237,7 +237,7 @@ int open(const char *file){
   //   printf("the file table entry is NULL\n");
   // //size_table[fd] = file_length(fileObj);
   // printf("the fd i'm assigning is %d AKA fileowner with tid %d\n", fd, thread_current()->tid);
-  
+  //printf("opened: %d\n", fd);
 	return fd; //if failed
 }
 
@@ -254,25 +254,10 @@ int write (int fd, const void *buffer, unsigned size){
     if(filePtr == NULL){ //fd does not actually point to a file // || file_is_writable(filePtr)
       return 0;
     }
-    //make sure it's not an executable
-    // if(isExecutable(filePtr) && !file_is_writable(filePtr)){
-    //   file_deny_write(filePtr);
-    //   return 0;
-    // }
-
-    // int i;
-    // for(i = 0; i<thread_current()->fd_index; i++){
-    //   if(thread_current()->fd_list[i] == fd){
-    //     //not executable, will write to it
-    //     int bytes_written = file_write(filePtr, buffer, size);   
-    //     //file_deny_write(filePtr);
-    //     return bytes_written;  
-    //   }
-    // }
-    // return 0;
-    int bytes_written = file_write(filePtr, buffer, size);   
-    //     //file_deny_write(filePtr);
-        return bytes_written; 
+    
+    int bytes_written = file_write(filePtr, buffer, size); 
+ 
+    return bytes_written; 
    
   }
   else{
@@ -286,7 +271,8 @@ int write (int fd, const void *buffer, unsigned size){
 int wait (pid_t pid) {
   if(pid == -1)
     return -1;
-
+  //struct thread * parent = thread_current();
+  
   return process_wait(pid);
 	//direct child of calling process
 	// struct thread * current = thread_current();
@@ -397,7 +383,9 @@ int read(int fd, const void *buffer, unsigned size){
     return bytes_read;
   }
   else{
-    return input_getc();
+    int bytes_read = input_getc();
+    close(fd);
+    return bytes_read;
   }
 }
 
@@ -411,6 +399,7 @@ bool remove(const char * file){
 }
 
 pid_t exec(const char * cmd_line){
+  //printf("i'm in exec\n");
   if(!isValidPtr((void *)cmd_line))
     exit(-1);
 
@@ -418,7 +407,7 @@ pid_t exec(const char * cmd_line){
 
   int childTid = process_execute(cmd_line);
 
-
+  
   sema_down(&(getChild(childTid)->load));
   
 
@@ -434,6 +423,7 @@ pid_t exec(const char * cmd_line){
   } 
     //printf("Load_success is returning -1\n");
 
+  
   
   
 
@@ -482,11 +472,8 @@ void seek(int fd, unsigned position){
   
 }
 
-void clearTable(int* fd, int size){
-  int i;
-  for(i=0; i<size; i++){
-    close(fd[i]);
-  }
+struct file * getFile(int fd){
+  return fd_table[fd];
 }
 
 

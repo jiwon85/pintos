@@ -309,8 +309,7 @@ thread_exit (void)
 {
   ASSERT (!intr_context ());
 thread_current()->isDead = 1;
-#ifdef UESRPROG
-  
+#ifdef USERPROG
   process_exit ();
 #endif
   sema_up(&(thread_current()->exit));

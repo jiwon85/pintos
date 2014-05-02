@@ -130,6 +130,9 @@ start_process (void *file_name_)
 
     }
   }
+  else{
+    file_deny_write(filesys_open(file_name));
+  }
   
 
   sema_up(&(thread_current()->load));
@@ -143,6 +146,7 @@ start_process (void *file_name_)
     thread_exit ();
 
   }
+
 
   /* Start the user process by simulating a return from an
 interrupt, implemented by intr_exit (in
@@ -212,6 +216,7 @@ process_wait (tid_t child_tid UNUSED)
       return saved;
   }
   thread_current()->load_success[indexOfChild] = -1;
+
   //done waiting thread
   //printf("exiting because i've already called wait\n");
   return -1;
@@ -221,8 +226,20 @@ process_wait (tid_t child_tid UNUSED)
 void
 process_exit (void)
 {
+
   struct thread *cur = thread_current ();
-  clearTable(cur->fd_list, cur->fd_index);
+  //if(cur->numChildren == 0)
+  //struct thread *parent = getChild(cur->parentId);
+  //if(parent->fd_index > 0){
+    //printf("i'm about to close my parent's files\n");
+    //int i;
+    //printf("parent->fd_index %d\n", parent->fd_index);
+    //for(i = 0; i < parent->fd_index; i++){
+      //file_close(getFile(parent->fd_list[0]));
+      
+   // }
+  //}
+  //clearTable(cur->fd_list, cur->fd_index);
   uint32_t *pd;
 
   /* Destroy the current process's page directory and switch back
@@ -448,7 +465,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
  done:
   /* We arrive here whether the load is successful or not. */
-  file_close (file);
+
 
   return success;
 }

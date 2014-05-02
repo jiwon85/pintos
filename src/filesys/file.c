@@ -47,6 +47,7 @@ file_close (struct file *file)
 {
   if (file != NULL)
     {
+      //printf("i'm allowing the file to write and ptr is %p\n", file);
       file_allow_write (file);
       inode_close (file->inode);
       free (file); 
@@ -94,6 +95,7 @@ file_read_at (struct file *file, void *buffer, off_t size, off_t file_ofs)
 off_t
 file_write (struct file *file, const void *buffer, off_t size) 
 {
+  //printf("i'm at write and ptr is %p\n", file);
   off_t bytes_written = inode_write_at (file->inode, buffer, size, file->pos);
   file->pos += bytes_written;
   return bytes_written;
@@ -121,6 +123,7 @@ file_deny_write (struct file *file)
   ASSERT (file != NULL);
   if (!file->deny_write) 
     {
+      //printf("i'm gonna deny the write yo\n");
       file->deny_write = true;
       inode_deny_write (file->inode);
     }
@@ -132,9 +135,14 @@ file_deny_write (struct file *file)
 void
 file_allow_write (struct file *file) 
 {
+  //printf("i'm in allow_write\n");
   ASSERT (file != NULL);
+  //printf("i passed the assert\n");
+  //file->deny_write = false;
+  
   if (file->deny_write) 
     {
+      //printf("i'm in file_allow and deny write is %d\n", file->deny_write);
       file->deny_write = false;
       inode_allow_write (file->inode);
     }
@@ -167,12 +175,3 @@ file_tell (struct file *file)
   return file->pos;
 }
 
-int
-file_is_writable (struct file *file){
-  ASSERT (file != NULL);
-  return file->deny_write;
-}
-
-off_t getPos(struct file *file){
-  return file->pos;
-}
